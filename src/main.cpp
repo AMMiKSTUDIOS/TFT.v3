@@ -7,7 +7,8 @@
 // Load FONTS
 #include "NationalRail.h"
 #include "fonts_compat.h"
-
+extern void tft_app_setup();
+extern void tft_app_loop();
 
 // [TRAKKR-NOTE] TFT dimensions for ILI9488 in landscape
 static const int SCREEN_W = 480;
@@ -18,36 +19,44 @@ void setup() {
 
   // ---- Init display ----
   tft.init();
-  tft.setRotation(1);                 // landscape  tft.fillScreen(TFT_BLACK);
+  tft.setRotation(1);                 // landscape
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.setFreeFont(&NationalRailSmall); 
+  tft.setFreeFont(&NationalRailRegular); 
+  tft.fillScreen(TFT_BLACK);  // <<---- clears everything
 
-
-  // ---- Prepare 12 labels ----
-  const char* rows[12] = {
-    "One","Two","11:17  London Euston               1  Cancelled","11:34  London Euston               1  ETA 11:36","11:51  London Euston               1  On Time","Six",
-    "Seven","Eight","Nine","Ten","Eleven","Twelve"
+  // ---- Prepare 2 labels ----
+  const char* rows[2] = {
+    "TRAKKR", 
+    "Your Desktop Station"
   };
 
-  // ---- Layout: evenly distribute 12 rows vertically, centred horizontally ----
-  const int ROWS = 12;
-  const int lineH = tft.fontHeight();                 // yAdvance for current FreeFont
+  // ---- Layout: evenly distribute rows vertically, centred horizontally ----
+  const int ROWS = 2;
+  const int lineH = tft.fontHeight();
   const int totalH = lineH * ROWS;
-  int top = (SCREEN_H - totalH) / 2;                  // top padding so block is vertically centred
-  if (top < 0) top = 0;                                // clamp if font is too large
+  int top = (SCREEN_H - totalH) / 2;
+  if (top < 0) top = 0;
 
-  tft.setTextDatum(MC_DATUM);                         // middle-centre for easy centring
+  tft.setTextDatum(MC_DATUM);
   const int cx = SCREEN_W / 2;
 
   for (int i = 0; i < ROWS; ++i) {
-    // Middle of each row band = top + i*lineH + lineH/2
     int y = top + i * lineH + (lineH / 2);
     tft.drawString(rows[i], cx, y);
   }
 
-  Serial.println("[TRAKKR] Success — drew 12 rows (One..Twelve) using NationalRail ~20pt");
+  Serial.println("[TRAKKR] Success — drew title");
+  delay(5000);
+
+  // ---- Clear before handing off ----
+  Serial.println("[TRAKKR] Clearing screen");
+  tft.fillScreen(TFT_BLACK);  // <<---- clears everything
+
+  // ---- Hand off to main app ----
+  tft_app_setup();
 }
 
+
 void loop() {
-  // Idle
+  tft_app_loop();
 }

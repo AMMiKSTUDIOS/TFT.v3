@@ -2,7 +2,7 @@
 #include "fonts_compat.h" 
 
 // N A T I O N A L   R A I L   F O N T S
-// Created by Paul Stoffregen, based on U8g2lib NationalRailSmall
+// Created by Paul Stoffregen, based on U8g2lib NationalRailTiny
 // Converted to Adafruit GFX format by Bodmer 2023
 // Released under SIL Open Font License
 
