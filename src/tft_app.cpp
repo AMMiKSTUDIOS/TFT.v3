@@ -101,7 +101,7 @@ static const char* TOK_NS      = "http://thalesgroup.com/RTTI/2013-11-28/Token/t
 
 // [TRAKKR] Switch to arrivals mode as requested
 static const char* MODE = "departures";    // "arrivals" or "departures"
-static const char* CRS  = "EUS";
+static const char* CRS  = "TAM";
 static const int   ROWS = 8;
 static const int   TIME_WINDOW_MINS = 120;
 
@@ -119,7 +119,7 @@ static const char* POWERED_MSG = "Powered by National Rail";
 static const int W=480, H=320, PAD=8;
 static const int HEADER_H=48, COLBAR_H=32;
 static const int COLBAR_Y=HEADER_H, ROW_TOP=COLBAR_Y+COLBAR_H;
-static const int X_STD=PAD, X_TO=50, X_ETD=245, X_PLAT=310, X_OPER=335;
+static const int X_STD=PAD, X_TO=55, X_ETD=245, X_PLAT=310, X_OPER=335;
 static const int CH_TIME=5, CH_TO=28, CH_ETD=10, CH_PLAT=3, CH_OPER=21;
 static const int  TICKER_H=28, TICKER_SPEED=2;
 static const int  ROW_VPAD = 6; 
