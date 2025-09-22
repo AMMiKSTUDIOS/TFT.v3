@@ -1,23 +1,55 @@
+// TRAKKER - copyright (c)2025 AMMiKSTUDIOS
+// All Rights Reserved
+//
+// TRAKKR is commercial software: you may not redistribute it and/or modify
+// it without prior permission from AMMiKSTUDIOS.
+// https://www.ammikstudios.com
+
 #include <Arduino.h>
 #include "TFT.h"
-
 #include <FS.h>
 #include <LittleFS.h>
 #include <JPEGDecoder.h>
-
-// Load FONTS
 #include "NationalRail.h"
 #include "fonts_compat.h"
-extern void tft_app_setup();
-extern void tft_app_loop();
+#include <WiFi.h>
+#include <time.h>
 
-// [TRAKKR-NOTE] TFT dimensions for ILI9488 in landscape
+extern void rail_setup();
+extern void rail_loop();
+
+// TFT dimensions for ILI9488 in landscape
 static const int SCREEN_W = 480;
 static const int SCREEN_H = 320;
+
+// Wi-Fi and Time credentials
+static const char* WIFI_SSID = "alterra";                 //  SSID of your Wi-Fi network
+static const char* WIFI_PASS = "Hewer035!!";              //  Wi-Fi password
+static const char* NTP_1 = "pool.ntp.org";                //  Primary NTP server
+static const char* NTP_2 = "time.nist.gov";               //  Secondary NTP server
+static const char* TZ_UK = "GMT0BST,M3.5.0/1,M10.5.0/2";  //  UK timezone with BST rules
+
+//
+// [TRAKKR] Centralised Wi-Fi connect/reconnect
+// Safe to call repeatedly; returns immediately if already connected.
+//
+
+void ensureWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  uint32_t t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000) {
+    delay(200);
+    Serial.print('.');
+  }
+  Serial.println();
+}
 
 // -----------------------------------------------------------------------------
 // [TRAKKR] Utilities
 // -----------------------------------------------------------------------------
+
 static void listFS() {
   Serial.println("[TRAKKR] Listing LittleFS contents:");
   File root = LittleFS.open("/");
@@ -88,8 +120,103 @@ static void showSplash(const char* rows[], int rowCount, int holdMs) {
     int y = top + i * lineH + (lineH / 2);
     tft.drawString(rows[i], cx, y);
   }
-  delay(holdMs);
+  if (holdMs > 0) delay(holdMs);
 }
+
+// [TRAKKR] Animated Wi-Fi splash with success/fail outcome
+static void splashWifiConnect(uint32_t timeoutMs = 15000) {
+  const char* title = "Connecting to WiFi";
+  const char* lines0[2] = { title, "" };
+  showSplash(lines0, 2, 0);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  uint32_t t0 = millis();
+  uint8_t dots = 0;
+  char line2[8] = {0};
+
+  while (WiFi.status() != WL_CONNECTED && (millis() - t0) < timeoutMs) {
+    dots = (dots % 3) + 1;                      // 1..3 dots
+    memset(line2, 0, sizeof(line2));
+    for (uint8_t i = 0; i < dots; i++) line2[i] = '.';
+
+    const char* lines[2] = { title, line2 };
+    showSplash(lines, 2, 0);
+    delay(250);
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    String ip = WiFi.localIP().toString();
+    String ok = String("WiFi connected: ") + ip;
+    const char* linesOK[2] = { "Connected", ok.c_str() };
+    showSplash(linesOK, 2, 3000);
+    Serial.printf("[TRAKKR] Wi-Fi connected, IP: %s\n", ip.c_str());
+  } else {
+    const char* linesFail[2] = { "WiFi failed", "Check SSID / PASS" };
+    showSplash(linesFail, 2, 3000);
+    Serial.println("[TRAKKR] Wi-Fi failed");
+  }
+}
+
+// [TRAKKR] Check if system time is valid (i.e. has been set via NTP)
+static bool timeIsValid() {
+  time_t now = time(nullptr);
+  return (now >= 1704067200UL); // 2024-01-01 00:00:00 UTC
+}
+
+// [TRAKKR] Ensure time is set via NTP; safe to call repeatedly
+void ensureTime() {
+  if (timeIsValid()) return;
+  configTime(0, 0, NTP_1, NTP_2);     // use NTP servers
+  setenv("TZ", TZ_UK, 1); tzset();    // apply local timezone
+}
+
+// [TRAKKR] Animated "Setting clock…" splash with success/fail outcome
+static void splashTimeSync(uint32_t timeoutMs = 15000) {
+  const char* title = "Setting clock";
+  const char* lines0[2] = { title, "" };
+  showSplash(lines0, 2, 0);
+
+  // Begin sync (idempotent)
+  ensureTime();
+
+  // Animate dots while waiting for valid time
+  uint32_t t0 = millis();
+  uint8_t dots = 0;
+  char line2[8] = {0};
+
+  while (!timeIsValid() && (millis() - t0) < timeoutMs) {
+    dots = (dots % 3) + 1;    // 1..3 dots
+    memset(line2, 0, sizeof(line2));
+    for (uint8_t i = 0; i < dots; i++) line2[i] = '.';
+    const char* lines[2] = { title, line2 };
+    showSplash(lines, 2, 0);
+    delay(250);
+  }
+
+  if (timeIsValid()) {
+    // Format local time for display
+    time_t now = time(nullptr);
+    struct tm lt; localtime_r(&now, &lt);
+    char buf[48];
+    strftime(buf, sizeof(buf), "%d %b %Y %H:%M", &lt);
+    String msg = String("Time: ") + buf;
+    const char* ok[2] = { "Clock set", msg.c_str() };
+    showSplash(ok, 2, 2000);  // <-- pause after showing time
+    Serial.printf("[TRAKKR] Clock set to %s\n", buf);
+  } else {
+    const char* fail[2] = { "Time sync failed", "Will retry later" };
+    showSplash(fail, 2, 1500);
+    Serial.println("[TRAKKR] Time sync failed");
+  }
+}
+
+//
+// -----------------------------------------------------------------------------
+// Main application entry points
+// -----------------------------------------------------------------------------
+//
 
 void setup() {
   Serial.begin(115200);
@@ -109,7 +236,7 @@ void setup() {
     if (LittleFS.exists("/TRAKKR.jpg")) {
       if (drawJpgFile("/TRAKKR.jpg", 0, 0)) {
         Serial.println("[TRAKKR] Splash loaded OK");
-        delay(10000);
+        delay(5000);
       } else {
         Serial.println("[TRAKKR] Splash image present but failed to draw");
       }
@@ -118,26 +245,31 @@ void setup() {
     }
   }
 
-  // Optional text splash sequence (kept from your original)
-  const char* scr1[] = { "TRAKKR", "from AMMiKSTUDIOS" };
-  showSplash(scr1, 2, 1500);
+  // Optional text splash sequence
+  const char* scr1[] = { "Welcome to TRAKKR", "from AMMiKSTUDIOS" };
+  showSplash(scr1, 2, 3000);
 
   const char* scr2[] = { "Powered by National Rail, TfL Open Data", "and Underground Weather" };
-  showSplash(scr2, 2, 1500);
+  showSplash(scr2, 2, 3000);
 
   const char* scr3[] = { "Copyright (c)2025 AMMiKSTUDIOS:", "All Rights Reserved" };
-  showSplash(scr3, 2, 1500);
+  showSplash(scr3, 2, 3000);
 
-  const char* scr4[] = { "Control Panel", "http://trakkr.local" };
-  showSplash(scr4, 2, 1500);
+  // Wi-Fi splash (animated)
+  Serial.println("[TRAKKR] Connecting Wi-Fi from main.cpp…");
+  splashWifiConnect();
 
-  Serial.println("[TRAKKR] Splash sequence complete — clearing");
+  // Control Panel info (fix: show scr5, not scr4)
+  const char* scr5[] = { "Control Panel", "http://trakkr.local" };
+  showSplash(scr5, 2, 3000);
+
+  // Clear screen to avoid ghosting from splash
   tft.fillScreen(TFT_BLACK);
 
-  // ---- Hand off to main app ----
-  tft_app_setup();
+  // ---- Hand-off to main app ----
+  rail_setup();
 }
 
 void loop() {
-  tft_app_loop();
+  rail_loop();
 }

@@ -1,7 +1,11 @@
-// src/tft_app.cpp — ESP32 + ILI9488 (TFT_eSPI) — Darwin OpenLDBWS (SOAP 1.2)
-// Minimal, flicker-free boot; persistent header; reliable first paint.
-// + Perf/health beacons: heap snapshots, fragmentation guard, timing scopes.
-// + File-backed endless ticker ribbon (LittleFS by default) to keep heap flat.
+// TRAKKER - copyright (c)2025 AMMiKSTUDIOS
+// All Rights Reserved
+
+// TRAKKR is commercial software: you may not redistribute it and/or modify
+// it without prior permission from AMMiKSTUDIOS.
+// https://www.ammikstudios.com
+
+
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -11,7 +15,10 @@
 #include <time.h>
 
 #include "TFT.h"
-#include "NationalRail.h"   // [TRAKKR] Use NationalRailTiny everywhere
+#include "NationalRail.h"
+
+extern void ensureWiFi();
+extern void ensureTime();
 
 // [TRAKKR-NOTE] Explicit FreeRTOS includes not required on ESP32 Arduino;
 // Arduino.h pulls them in for us. We still use FreeRTOS APIs (tasks, semaphores).
@@ -37,6 +44,7 @@ struct FetchScope { bool active; explicit FetchScope(bool ok):active(ok){} ~Fetc
 
 static SemaphoreHandle_t gTftMutex = nullptr;
 static void drawTicker_FS();
+static void drawBusIcon(int xLeft, int yTop, int h, uint16_t fg, uint16_t bg);
 static void tickerTask(void*){
   for(;;){
     if (xSemaphoreTake(gTftMutex, portMAX_DELAY) == pdTRUE){
@@ -89,8 +97,6 @@ static bool checkHeap(const char* where){
 struct ScopeTimer { const char* n; uint32_t t0; ScopeTimer(const char* s):n(s),t0(millis()){} ~ScopeTimer(){ if(PERF_VERBOSE) Serial.printf("[TIME] %-18s %lums\n", n, (unsigned long)(millis()-t0)); } };
 
 // ===== CONFIG =====
-static const char* WIFI_SSID   = "alterra";
-static const char* WIFI_PASS   = "Hewer035!!";
 static const char* DARWIN_HOST = "lite.realtime.nationalrail.co.uk";
 static const char* DARWIN_PATH = "/OpenLDBWS/ldb9.asmx";
 static const char* DARWIN_TOKEN= "9a6c3c95-ca8e-411f-8d5b-f32564d0928d";
@@ -100,14 +106,13 @@ static const char* LDB_NS      = "http://thalesgroup.com/RTTI/2016-02-16/ldb/";
 static const char* TOK_NS      = "http://thalesgroup.com/RTTI/2013-11-28/Token/types";
 
 // [TRAKKR] Switch to arrivals mode as requested
-static const char* MODE = "departures";    // "arrivals" or "departures"
-static const char* CRS  = "TAM";
-static const int   ROWS = 8;
-static const int   TIME_WINDOW_MINS = 120;
-
-static const uint32_t POLL_MS_OK  = 15000;
-static const uint32_t POLL_MS_ERR = 2000;
-static const uint32_t TICKER_MS   = 7000;
+static const char* MODE = "departures";     // "arrivals" or "departures"
+static const char* CRS  = "STP";            // Three-letter station code  
+static const int   ROWS = 8;                // Number of rows to show (max 16, limited by screen height)  
+static const int   TIME_WINDOW_MINS = 120;  // Look for services within this many minutes of now
+static const uint32_t POLL_MS_OK  = 30000;  // 30s between successful polls
+static const uint32_t POLL_MS_ERR = 2000;   // 2s between failed polls/
+static const uint32_t TICKER_MS   = 7000;   // 7s between ticker updates
 
 static const bool   DEBUG_NET       = true;
 static const bool   DEBUG_BODY_SNIP = false;
@@ -125,7 +130,7 @@ static const int  TICKER_H=28, TICKER_SPEED=2;
 static const int  ROW_VPAD = 6; 
 
 // ===== STATE =====
-struct Svc { String time, place, est, plat, oper; };
+struct Svc { String time, place, est, plat, oper; bool bus = false; };
 std::vector<Svc>   services;
 std::vector<String> nrccMsgs;
 
@@ -148,17 +153,6 @@ static uint16_t badCol()   { return tft.color565(0xff,0x5d,0x5d); }
 
 // ===== UTILS =====
 static String ellipsize(const String& s, int m){ if((int)s.length()<=m) return s; if(m<=1) return "…"; return s.substring(0,m-1)+"…"; }
-static void ensureWiFi(){
-  if (WiFi.status()==WL_CONNECTED) return;
-  ScopeTimer T("WiFi connect");
-  logMem("pre-WiFi");
-  WiFi.mode(WIFI_STA); WiFi.begin(WIFI_SSID, WIFI_PASS);
-  uint32_t t0=millis();
-  while (WiFi.status()!=WL_CONNECTED && millis()-t0<15000){ delay(200); Serial.print('.'); }
-  Serial.println();
-  logMem("post-WiFi");
-  checkHeap("post-WiFi");
-}
 
 // [TRAKKR] Keep only the first sentence of an NRCC message.
 static String keepFirstSentence(const String& in){
@@ -291,6 +285,27 @@ static String normalizeOper(String op){
   return op;
 }
 
+// Tiny bus icon helper
+static void drawBusIcon(int xLeft, int yTop, int h, uint16_t fg, uint16_t bg){
+  // [TRAKKR] Minimal 2D bus glyph sized to row height
+  // h ~ 12–16 looks best; we derive body/wheels from h
+  if (h < 10) h = 10;
+  int bodyH = h - 4;                 // leave room for wheels
+  if (bodyH < 6) bodyH = 6;
+  int w = bodyH * 2;                 // aspect ~2:1
+  // Body
+  tft.fillRoundRect(xLeft, yTop, w, bodyH, 3, fg);
+  // Window band
+  int winH = max(2, bodyH / 2 - 1);
+  tft.fillRect(xLeft + 3, yTop + 2, max(0, w - 6), winH, bg);
+  // Door line (optional)
+  tft.drawFastVLine(xLeft + w - 6, yTop + 2, bodyH - 4, bg);
+  // Wheels
+  int wy = yTop + bodyH + 1;
+  tft.fillCircle(xLeft + 5, wy, 2, fg);
+  tft.fillCircle(xLeft + w - 5, wy, 2, fg);
+}
+
 static void drawRows() {
   ScopeTimer T("drawRows");
 
@@ -354,7 +369,17 @@ static void drawRows() {
     drawShadowed(ellipsize(s.est, CH_ETD),     X_ETD,  by, c,       ML_DATUM);
 
     // --- Plat / Operator ---
-    drawShadowed(ellipsize(s.plat, CH_PLAT),   X_PLAT, by, TFT_WHITE, ML_DATUM);
+    if (s.bus) {
+      // [TRAKKR] Draw a small bus icon centered in the row instead of text
+      int rowTop = ROW_TOP + i * rowH;
+      int iconH  = min(16, max(12, rowH - 6));               // keep within row
+      int yTop   = rowTop + (rowH - iconH) / 2;
+      // Clear a small cell where the platform text would be, then draw icon
+      tft.fillRect(X_PLAT - 2, rowTop + 1, 26, rowH - 2, (i % 2 == 0) ? bodyBg() : rowAlt());
+      drawBusIcon(X_PLAT, yTop, iconH, TFT_WHITE, (i % 2 == 0) ? bodyBg() : rowAlt());
+    } else {
+      drawShadowed(ellipsize(s.plat, CH_PLAT), X_PLAT, by, TFT_WHITE, ML_DATUM);
+    }
     drawShadowed(ellipsize(s.oper, CH_OPER),   X_OPER, by, TFT_WHITE, ML_DATUM);
   }
 
@@ -670,62 +695,117 @@ static String extractFault(const String& body){
   String reason=get1ns(body,"Reason"); String text=get1ns(reason,"Text");
   return text;
 }
+
+
 static bool fetchDarwinBoard(){
+  // [TRAKKR] Debounce & mutual exclusion for network fetches
   bool okToRun = beginFetchGuard(800);
   if (!okToRun) return false;
   FetchScope guard(okToRun);
 
   ScopeTimer T("fetch+parse");
-  services.clear(); nrccMsgs.clear();
+  services.clear();
+  nrccMsgs.clear();
+
   const bool dep = (MODE[0] != 'a');
   const char* method = dep ? "GetDepartureBoard"        : "GetArrivalBoard";
   const char* reqTag = dep ? "GetDepartureBoardRequest" : "GetArrivalBoardRequest";
 
-  String body; int code=0;
-  { ScopeTimer Tpost("SOAP roundtrip"); if (!postSoapOnce(body, code, method, reqTag)){
+  // ---- SOAP roundtrip ----
+  String body; int code = 0;
+  {
+    ScopeTimer Tpost("SOAP roundtrip");
+    if (!postSoapOnce(body, code, method, reqTag)){
       String fault = extractFault(body);
-      if (DEBUG_NET){ Serial.printf("[SOAP] FAIL code=%d fault=\"%s\"\n", code, fault.c_str()); }
+      if (DEBUG_NET){
+        Serial.printf("[SOAP] FAIL code=%d fault=\"%s\"\n", code, fault.c_str());
+      }
       return false;
-    } }
+    }
+  }
 
-  { ScopeTimer Tparse("parse XML");
-    String loc = get1ns(body,"locationName"); stationTitle = loc.length()?loc:String(CRS);
+  // ---- Parse XML ----
+  {
+    ScopeTimer Tparse("parse XML");
 
-    String ts = get1ns(body,"trainServices");
+    // Station title
+    String loc = get1ns(body, "locationName");
+    stationTitle = loc.length() ? loc : String(CRS);
+
+    // Services
+    String ts = get1ns(body, "trainServices");
     if (ts.length()){
-      int pos=0; String svc;
-      while ((int)services.size() < ROWS && nextTagNS(ts,"service",pos,svc)){
+      int pos = 0; String svc;
+      while ((int)services.size() < ROWS && nextTagNS(ts, "service", pos, svc)){
         Svc v;
+
+        // Core fields
         v.time = get1ns(svc, dep ? "std" : "sta");
-        v.est  = get1ns(svc, dep ? "etd" : "eta"); if(!v.est.length()) v.est="On time";
-        v.plat = get1ns(svc,"platform");
-        v.oper = normalizeOper(get1ns(svc,"operator"));
+        v.est  = get1ns(svc, dep ? "etd" : "eta"); 
+        if (!v.est.length()) v.est = "On time";
+        v.plat = get1ns(svc, "platform");
+        v.oper = normalizeOper(get1ns(svc, "operator"));
+
         String endBlk = get1ns(svc, dep ? "destination" : "origin");
-        String first  = get1ns(endBlk,"location");
-        v.place = get1ns(first,"locationName");
+        String first  = get1ns(endBlk, "location");
+        v.place = get1ns(first, "locationName");
+
+        // ---- Bus replacement detection ----
+        // [TRAKKR] Prefer explicit tags when present; fall back to heuristics.
+        String stype   = get1ns(svc, "serviceType");   stype.toLowerCase();     // e.g. "train" / "bus"
+        String isBus   = get1ns(svc, "isBus");         isBus.toLowerCase();     // some feeds expose this
+        String cat     = get1ns(svc, "category");      cat.toLowerCase();       // can include "bus"
+        String plat = v.plat;  plat.toLowerCase();  plat.trim();
+        String oper = v.oper;  oper.toLowerCase();  oper.trim();
+
+        bool bus = false;
+        if (stype.indexOf("bus") >= 0)                         bus = true;
+        else if (isBus == "true" || isBus == "1")              bus = true;
+        else if (cat.indexOf("bus") >= 0)                      bus = true;
+        else if (plat == "bus" || plat == "coach")             bus = true;
+        else if (oper.indexOf("replacement") >= 0 ||
+                 oper.indexOf("bus") >= 0 ||
+                 oper.indexOf("coach") >= 0)                   bus = true;
+
+        v.bus = bus;                 // requires Svc to have: bool bus = false;
+
+        // Tidy platform text for bus rows (we draw an icon later)
+        if (v.bus) v.plat = "";      // avoid stray text like "bus" in the Plat cell
+
+        // Accept only meaningful rows
         if (v.time.length() || v.place.length()) services.push_back(v);
       }
     }
 
+    // NRCC Messages — keep only first sentence for brevity
     String ms = get1ns(body, "nrccMessages");
     if (ms.length()){
       int pos = 0; String inner;
       while (nextTagNS(ms, "message", pos, inner)){
-        String txt = get1ns(inner,"text"); if (!txt.length()) txt = inner;
-        // HTML entity unescape
-        txt.replace("&nbsp;"," "); txt.replace("&amp;","&"); txt.replace("&lt;","<");
-        txt.replace("&gt;",">"); txt.replace("&quot;","\""); txt.replace("&apos;","'");
-        // Strip any HTML tags
+        String txt = get1ns(inner, "text"); 
+        if (!txt.length()) txt = inner;
+
+        // Unescape a minimal HTML entity set
+        txt.replace("&nbsp;", " "); txt.replace("&amp;", "&");
+        txt.replace("&lt;",  "<");  txt.replace("&gt;",  ">");
+        txt.replace("&quot;","\""); txt.replace("&apos;","'");
+
+        // Strip any remaining tags
         for (;;){
-          int lt=txt.indexOf('<'); if(lt<0) break;
-          int gt=txt.indexOf('>',lt+1); if(gt<0){ txt.remove(lt); break;}
-          txt.remove(lt,gt-lt+1);
+          int lt = txt.indexOf('<'); if (lt < 0) break;
+          int gt = txt.indexOf('>', lt + 1);
+          if (gt < 0){ txt.remove(lt); break; }
+          txt.remove(lt, gt - lt + 1);
         }
+
         // Collapse spaces and trim
-        for (int i=0;i+1<(int)txt.length();){ if (txt[i]==' ' && txt[i+1]==' ') txt.remove(i,1); else ++i; }
+        for (int i = 0; i + 1 < (int)txt.length(); ){
+          if (txt[i] == ' ' && txt[i+1] == ' ') txt.remove(i, 1);
+          else ++i;
+        }
         txt.trim();
 
-        // [TRAKKR] Keep only the first sentence
+        // Keep first sentence
         txt = keepFirstSentence(txt);
 
         if (txt.length()) nrccMsgs.push_back(txt);
@@ -733,13 +813,19 @@ static bool fetchDarwinBoard(){
     }
   }
 
+  // ---- Ticker content ----
   tickerSetHasNRCC(!nrccMsgs.empty());
   tickerRefreshFilesAndOpen();
 
-  if (DEBUG_NET){ Serial.printf("[PARSE] %s  services=%u  nrcc=%u\n",
-    stationTitle.c_str(), (unsigned)services.size(), (unsigned)nrccMsgs.size()); }
+  if (DEBUG_NET){
+    Serial.printf("[PARSE] %s  services=%u  nrcc=%u\n",
+      stationTitle.c_str(),
+      (unsigned)services.size(),
+      (unsigned)nrccMsgs.size());
+  }
   return true;
 }
+
 
 // ===== APP SETUP / LOOP =====
 static void app_setup_impl(){
@@ -747,11 +833,15 @@ static void app_setup_impl(){
   Serial.println("\n[BOOT] tft_app starting…");
   logMem("boot");
 
-  tft.init();
-  tft.setRotation(1);
+  // [TRAKKR] Hand-off baseline — do NOT re-init/rotate here
+  tft.endWrite();                // close any prior transaction
+  tft.setSwapBytes(false);       // JPEG code toggles this; reset now
   tft.setTextDatum(TL_DATUM);
   tft.setFreeFont(&NationalRailTiny);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
+
+  // Ensure we don’t show a white frame during hand-off
+  tft.fillScreen(TFT_BLACK);
 
   bootInit();
   headerInit();
@@ -830,7 +920,5 @@ static void app_loop_impl(){
 }
 
 // expose for main.cpp
-void tft_app_setup(){ app_setup_impl(); }
-void tft_app_loop(){  app_loop_impl();  }
-void tfl_app_setup(){ app_setup_impl(); }
-void tfl_app_loop(){  app_loop_impl();  }
+void rail_setup(){ app_setup_impl(); }
+void rail_loop(){  app_loop_impl();  }
