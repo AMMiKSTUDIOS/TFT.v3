@@ -29,11 +29,15 @@ static const char* NTP_1 = "pool.ntp.org";                //  Primary NTP server
 static const char* NTP_2 = "time.nist.gov";               //  Secondary NTP server
 static const char* TZ_UK = "GMT0BST,M3.5.0/1,M10.5.0/2";  //  UK timezone with BST rules
 
+// [TRAKKR] Match rail.cpp body background (#0b1020)
+static inline uint16_t bodyBgMain() {
+  return tft.color565(0x0b, 0x10, 0x20);
+}
+
 //
 // [TRAKKR] Centralised Wi-Fi connect/reconnect
 // Safe to call repeatedly; returns immediately if already connected.
 //
-
 void ensureWiFi() {
   if (WiFi.status() == WL_CONNECTED) return;
   WiFi.mode(WIFI_STA);
@@ -106,9 +110,9 @@ static bool drawJpgFile(const char *path, int x, int y) {
 
 // [TRAKKR] Helper to show a centred message list
 static void showSplash(const char* rows[], int rowCount, int holdMs) {
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(bodyBgMain());
   tft.setFreeFont(&NationalRailRegular);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextColor(TFT_WHITE, bodyBgMain());
   tft.setTextDatum(MC_DATUM);
 
   const int lineH  = tft.fontHeight();
@@ -224,7 +228,7 @@ void setup() {
   // ---- Init display ----
   tft.init();
   tft.setRotation(1); // landscape
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(bodyBgMain());
 
   // ---- Init filesystem ----
   if (!LittleFS.begin()) {
@@ -259,12 +263,16 @@ void setup() {
   Serial.println("[TRAKKR] Connecting Wi-Fi from main.cpp…");
   splashWifiConnect();
 
-  // Control Panel info (fix: show scr5, not scr4)
+  // Time splash
+  Serial.println("[TRAKKR] Setting Time from main.cpp…");
+  splashTimeSync();
+
+  // Control Panel info
   const char* scr5[] = { "Control Panel", "http://trakkr.local" };
   showSplash(scr5, 2, 3000);
 
   // Clear screen to avoid ghosting from splash
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(bodyBgMain());
 
   // ---- Hand-off to main app ----
   rail_setup();

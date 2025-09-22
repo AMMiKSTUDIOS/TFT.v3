@@ -1,11 +1,9 @@
 // TRAKKER - copyright (c)2025 AMMiKSTUDIOS
 // All Rights Reserved
-
+//
 // TRAKKR is commercial software: you may not redistribute it and/or modify
 // it without prior permission from AMMiKSTUDIOS.
 // https://www.ammikstudios.com
-
-
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -107,8 +105,8 @@ static const char* TOK_NS      = "http://thalesgroup.com/RTTI/2013-11-28/Token/t
 
 // [TRAKKR] Switch to arrivals mode as requested
 static const char* MODE = "departures";     // "arrivals" or "departures"
-static const char* CRS  = "STP";            // Three-letter station code  
-static const int   ROWS = 8;                // Number of rows to show (max 16, limited by screen height)  
+static const char* CRS  = "STP";            // Three-letter station code
+static const int   ROWS = 8;                // Number of rows to show (max 16, limited by screen height)
 static const int   TIME_WINDOW_MINS = 120;  // Look for services within this many minutes of now
 static const uint32_t POLL_MS_OK  = 30000;  // 30s between successful polls
 static const uint32_t POLL_MS_ERR = 2000;   // 2s between failed polls/
@@ -127,7 +125,7 @@ static const int COLBAR_Y=HEADER_H, ROW_TOP=COLBAR_Y+COLBAR_H;
 static const int X_STD=PAD, X_TO=55, X_ETD=245, X_PLAT=310, X_OPER=335;
 static const int CH_TIME=5, CH_TO=28, CH_ETD=10, CH_PLAT=3, CH_OPER=21;
 static const int  TICKER_H=28, TICKER_SPEED=2;
-static const int  ROW_VPAD = 6; 
+static const int  ROW_VPAD = 6;
 
 // ===== STATE =====
 struct Svc { String time, place, est, plat, oper; bool bus = false; };
@@ -188,14 +186,23 @@ static void bootShow(const char* line){
 }
 static void bootHide(){ tft.fillRect(0, HEADER_H, W, H-HEADER_H, bodyBg()); }
 
-// ===== CLOCK =====
-static void setupClockTZ(){
-  configTzTime("GMT0BST,M3.5.0/1,M10.5.0/2",
-               "pool.ntp.org","time.google.com","time.cloudflare.com");
+// [TRAKKR] Full-screen loading message (no title bar shown yet)
+static void showLoadingBoardFull() {
+  tft.fillScreen(bodyBg());
+  tft.setFreeFont(&NationalRailRegular);
+  tft.setTextColor(TFT_WHITE, bodyBg());
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString("Loading Board", W / 2, H / 2);
+  tft.setTextDatum(TL_DATUM);
 }
+
+// ===== CLOCK =====
+// [TRAKKR-NOTE] Time is initialised in main.cpp via ensureTime(). Old NTP helpers removed.
 static bool timeValid(){ time_t t=time(nullptr); struct tm tm{}; localtime_r(&t,&tm); return tm.tm_year>=120; }
-static bool waitForTime(uint32_t ms=6000){ ScopeTimer T("NTP settle"); uint32_t t0=millis(); while(!timeValid() && millis()-t0<ms){ delay(100);} return timeValid(); }
-static void nowHHMM(char* out,size_t n){ if(!timeValid()){ strncpy(out,"--:--",n); return; } time_t t=time(nullptr); struct tm tm{}; localtime_r(&t,&tm); strftime(out,n,"%H:%M",&tm); }
+static void nowHHMM(char* out,size_t n){
+  if(!timeValid()){ strncpy(out,"--:--",n); return; }
+  time_t t=time(nullptr); struct tm tm{}; localtime_r(&t,&tm); strftime(out,n,"%H:%M",&tm);
+}
 static void headerInit(){
   tft.setFreeFont(&NationalRailSmall);
   int ww = tft.textWidth("88:88");
@@ -213,14 +220,11 @@ static void drawClockIfChanged(){
   if (strcmp(buf,last)==0) return;
 
   tft.setFreeFont(&NationalRailSmall);
-  // Compute the header’s top for this font and use TL_DATUM at that Y (no baseline fudge)
   int fh = (int)tft.fontHeight(); if (fh < 16) fh = 16;
   const int yTop = (HEADER_H - fh) / 2;
 
-  // Clear the clock box area then redraw
   tft.fillRect(clockBoxX, clockBoxY, clockBoxW, clockBoxH, headBg());
 
-  // Small left padding inside the box; align vertically with header mid
   const int xPad = 7;
   drawShadowed(String(buf), clockBoxX + xPad, yTop, TFT_WHITE, TL_DATUM);
 
@@ -235,12 +239,10 @@ static void scheduleNextMinute(){
 
 // ===== HEADER TITLE =====
 static void setTitle(const String& station){
-  // [TRAKKR] Centre the title vertically in the header so it lines up with the clock
   tft.setFreeFont(&NationalRailSmall);
   int fh = (int)tft.fontHeight(); if (fh < 16) fh = 16;
-  const int yTop  = (HEADER_H - fh) / 2;  // midway between top and base
+  const int yTop  = (HEADER_H - fh) / 2;
 
-  // [TRAKKR] Clear the title band up to just before the clock box
   const int clearX = 1;
   const int clearY = 1;
   const int stopX  = (clockBoxX > 0 ? clockBoxX : (W - PAD - 60));
@@ -248,7 +250,6 @@ static void setTitle(const String& station){
   const int clearH = HEADER_H - 2;
   tft.fillRect(clearX, clearY, clearW, clearH, headBg());
 
-  // Compose and trim to fit available pixels
   String want = station + String(" ") + (MODE[0]=='a' ? "Arrivals" : "Departures");
   const int maxPx = ((stopX - PAD - 6) > 20) ? (stopX - PAD - 6) : 20;
 
@@ -256,13 +257,8 @@ static void setTitle(const String& station){
   while (out.length() && tft.textWidth(out + "…") > maxPx) out.remove(out.length()-1);
   if (out.length() && out != want) out += "…";
 
-  // Draw title using the same vertical reference as the clock
   drawShadowed(out, PAD, yTop, TFT_WHITE, TL_DATUM);
 }
-
-
-
-
 
 // ===== COLUMNS & ROWS =====
 static const int rowH=26;
@@ -287,20 +283,14 @@ static String normalizeOper(String op){
 
 // Tiny bus icon helper
 static void drawBusIcon(int xLeft, int yTop, int h, uint16_t fg, uint16_t bg){
-  // [TRAKKR] Minimal 2D bus glyph sized to row height
-  // h ~ 12–16 looks best; we derive body/wheels from h
   if (h < 10) h = 10;
-  int bodyH = h - 4;                 // leave room for wheels
+  int bodyH = h - 4;
   if (bodyH < 6) bodyH = 6;
-  int w = bodyH * 2;                 // aspect ~2:1
-  // Body
+  int w = bodyH * 2;
   tft.fillRoundRect(xLeft, yTop, w, bodyH, 3, fg);
-  // Window band
   int winH = max(2, bodyH / 2 - 1);
   tft.fillRect(xLeft + 3, yTop + 2, max(0, w - 6), winH, bg);
-  // Door line (optional)
   tft.drawFastVLine(xLeft + w - 6, yTop + 2, bodyH - 4, bg);
-  // Wheels
   int wy = yTop + bodyH + 1;
   tft.fillCircle(xLeft + 5, wy, 2, fg);
   tft.fillCircle(xLeft + w - 5, wy, 2, fg);
@@ -308,85 +298,54 @@ static void drawBusIcon(int xLeft, int yTop, int h, uint16_t fg, uint16_t bg){
 
 static void drawRows() {
   ScopeTimer T("drawRows");
-
-  // [TRAKKR] Compute dynamic row height for 7 rows, padded so descenders aren't clipped
   tft.setFreeFont(&NationalRailTiny);
-  // ADD/REPLACE the row-height maths below
 
-  // REPLACE these original lines:
-  //   const int fh      = tft.fontHeight();
-  //   const int autoH   = (H - ROW_TOP - TICKER_H) / max(1, ROWS);
-  //   const int rowH    = max(fh + ROW_VPAD, autoH);
-  //   const int maxVis  = min(ROWS, (H - ROW_TOP - TICKER_H) / rowH);
-  //   const int painted = min((int)services.size(), maxVis);
-
-  // WITH THIS:
   const int fh = (int)tft.fontHeight();
-
-  // Available height for rows
   const int availH  = H - ROW_TOP - TICKER_H;
   const int autoH   = availH / max(1, ROWS);
 
-  // [TRAKKR] Tight spacing caps:
-  // - Keep at least 3px padding above & below glyph box (no clipped heads/tails).
-  // - Avoid stretched rows by capping extra leading to ~8px total.
-  const int minRowH = fh + 6;   // safe minimum (3px top + 3px bottom)
-  const int maxRowH = fh + 8;   // compact target; allows a touch of breathing room
+  const int minRowH = fh + 6;
+  const int maxRowH = fh + 8;
 
-  int rowH = autoH;
-  if (rowH > maxRowH) rowH = maxRowH;
-  if (rowH < minRowH) rowH = minRowH;
+  int _rowH = autoH;
+  if (_rowH > maxRowH) _rowH = maxRowH;
+  if (_rowH < minRowH) _rowH = minRowH;
 
-  // How many rows we can actually paint
-  const int maxVis  = min(ROWS, availH / rowH);
+  const int maxVis  = min(ROWS, availH / _rowH);
   const int painted = min((int)services.size(), maxVis);
-
-  // [TRAKKR-NOTE] Keep your existing loop/body that fills backgrounds and draws text.
-  // The usual "by" calculation still works; no change needed:
-  //   int by = ROW_TOP + i*rowH + rowH/2;
 
   for (int i = 0; i < painted; i++) {
     const auto& s = services[i];
     uint16_t bg   = (i % 2 == 0) ? bodyBg() : rowAlt();
 
-    // clear row background
-    tft.fillRect(0, ROW_TOP + i*rowH, W, rowH, bg);
+    tft.fillRect(0, ROW_TOP + i*_rowH, W, _rowH, bg);
 
-    // vertical middle of row for ML_DATUM text baseline
-    int by = ROW_TOP + i*rowH + rowH/2;
+    int by = ROW_TOP + i*_rowH + _rowH/2;
 
-    // --- STA / From ---
     drawShadowed(ellipsize(s.time,  CH_TIME),  X_STD,  by, TFT_YELLOW, ML_DATUM);
-
-    // Place column
     drawShadowed(ellipsize(s.place, CH_TO),    X_TO,   by, TFT_WHITE,  ML_DATUM);
 
-    // --- ETA (warn/cancel colouring) ---
     String low = s.est; low.toLowerCase();
     uint16_t c = TFT_WHITE;
     if (low.indexOf("cancel") >= 0 || low.indexOf("delay") >= 0) c = badCol();
     else if (low.indexOf("late") >= 0 || low.indexOf(':') >= 0)   c = warnCol();
     drawShadowed(ellipsize(s.est, CH_ETD),     X_ETD,  by, c,       ML_DATUM);
 
-    // --- Plat / Operator ---
     if (s.bus) {
-      // [TRAKKR] Draw a small bus icon centered in the row instead of text
-      int rowTop = ROW_TOP + i * rowH;
-      int iconH  = min(16, max(12, rowH - 6));               // keep within row
-      int yTop   = rowTop + (rowH - iconH) / 2;
-      // Clear a small cell where the platform text would be, then draw icon
-      tft.fillRect(X_PLAT - 2, rowTop + 1, 26, rowH - 2, (i % 2 == 0) ? bodyBg() : rowAlt());
-      drawBusIcon(X_PLAT, yTop, iconH, TFT_WHITE, (i % 2 == 0) ? bodyBg() : rowAlt());
+      int rowTop = ROW_TOP + i * _rowH;
+      int iconH  = min(16, max(12, _rowH - 6));
+      int yTop   = rowTop + ( _rowH - iconH) / 2;
+      tft.fillRect(X_PLAT - 2, rowTop + 1, 26, _rowH - 2, bg);
+      drawBusIcon(X_PLAT, yTop, iconH, TFT_WHITE, bg);
     } else {
       drawShadowed(ellipsize(s.plat, CH_PLAT), X_PLAT, by, TFT_WHITE, ML_DATUM);
     }
     drawShadowed(ellipsize(s.oper, CH_OPER),   X_OPER, by, TFT_WHITE, ML_DATUM);
   }
 
-  // clear any unpainted rows
   if (painted < maxVis) {
-    int y = ROW_TOP + painted*rowH;
-    int h = (maxVis - painted)*rowH;
+    int y = ROW_TOP + painted*_rowH;
+    int h = (maxVis - painted)*_rowH;
     tft.fillRect(0, y, W, h, bodyBg());
   }
 
@@ -425,7 +384,6 @@ static bool readMeta(uint32_t& out){ File f=FSNS.open(kMetaPath,"r"); if(!f) ret
 static void writeMeta(uint32_t v){ File f=FSNS.open(kMetaPath,"w"); if(!f) return; f.write((const uint8_t*)&v,sizeof(v)); f.close(); }
 
 static bool writeTickerFileIfChanged(){
-  // Build message list (trim empties)
   std::vector<String> list;
   list.reserve(nrccMsgs.size()+1);
   for (auto &m : nrccMsgs){ String v=m; v.trim(); if (v.length()) list.push_back(v); }
@@ -438,7 +396,6 @@ static bool writeTickerFileIfChanged(){
     return false;
   }
 
-  // Write to temp → rename for atomicity
   File tmp = FSNS.open("/ticker.tmp", "w");
   if (!tmp){ Serial.println("[TICK][ERR] open tmp failed"); return false; }
 
@@ -446,10 +403,8 @@ static bool writeTickerFileIfChanged(){
   char buf[BUF];
   for (size_t i=0;i<list.size();++i){
     String s = list[i];
-    // Normalize whitespace a bit
     for (int p=0; p+1<(int)s.length();){ if (s[p]==' ' && s[p+1]==' ') s.remove(p,1); else ++p; }
     s.trim();
-    // Write chunked to avoid large temporary allocations
     size_t off=0, n=s.length();
     while (off<n){
       size_t take = min(BUF, n-off);
@@ -475,22 +430,18 @@ static int  readByteAt(size_t off){ if(!tickFile||!tickSize) return -1; off%=tic
 
 // -------------------- TICKER RENDERER --------------------
 static void drawTicker_FS(){
-  // [TRAKKR] Bottom ticker band
   const int y        = H - TICKER_H;
   const int availPx  = W - 2*PAD;
 
-  // Font + vertical placement
   tickSpr.setFreeFont(&NationalRailTiny);
   const int fh    = (int)tickSpr.fontHeight() > 0 ? (int)tickSpr.fontHeight() : 1;
-  const int baseY = TICKER_H - 2;                         // ~2 px above bottom edge (baseline)
+  const int baseY = TICKER_H - 2;
 
-  // -------------------- STATIC MODE (no NRCC) --------------------
   if (!gTickerHasNRCC){
     if (gTickerStaticDirty){
       tickSpr.fillSprite(headBg());
       tickSpr.setTextWrap(false);
       tickSpr.setTextDatum(MC_DATUM);
-      // light shadow for legibility
       tickSpr.setTextColor(TFT_BLACK, headBg());  tickSpr.drawString(POWERED_MSG, W/2+1, TICKER_H/2+1);
       tickSpr.setTextColor(TFT_WHITE, headBg());  tickSpr.drawString(POWERED_MSG, W/2,   TICKER_H/2);
       gTickerStaticDirty = false;
@@ -500,16 +451,13 @@ static void drawTicker_FS(){
     return;
   }
 
-  // -------------------- SCROLLING MODE (NRCC) --------------------
-  // Cache: raw buffer (with '|'), rendered text (without '|'), pixel width, and separator positions in pixels.
-  static String sBuf;             // raw NRCC text (with '|')
-  static String sRender;          // sBuf with '|' stripped (what we actually draw as text)
-  static int    sRenderPx = 0;    // pixel width of sRender
-  static std::vector<int> sSepPx; // pixel offsets of each '|' relative to start of sRender
+  static String sBuf;
+  static String sRender;
+  static int    sRenderPx = 0;
+  static std::vector<int> sSepPx;
   static bool   sInit = false;
 
   if (gTickerStaticDirty || !sInit){
-    // (1) Read full ticker file to RAM (once per content change)
     sBuf = "";
     sBuf.reserve(2048);
     if (tickFile){
@@ -521,18 +469,14 @@ static void drawTicker_FS(){
       }
     }
     if (sBuf.length() == 0) sBuf = POWERED_MSG;
-
-    // Repeat short strings so we always have enough width to tile smoothly
     if (sBuf.length() < 64) sBuf += String("   |   ") + sBuf;
 
-    // (2) Build the render string (no pipes) and measure once
     sRender = sBuf; sRender.replace("|", "");
     tickSpr.setTextDatum(BL_DATUM);
     tickSpr.setTextWrap(false);
     sRenderPx = tickSpr.textWidth(sRender);
     if (sRenderPx <= 0) sRenderPx = 1;
 
-    // (3) Precompute pixel positions for each '|' separator (for bullets)
     sSepPx.clear();
     int searchFrom = 0;
     while (true){
@@ -544,36 +488,29 @@ static void drawTicker_FS(){
       sSepPx.push_back(px);
     }
 
-    // Reset scroll position
     scrollPx = 0;
     gTickerStaticDirty = false;
     sInit = true;
   }
 
-  // (4) Compose the sprite for this frame (no re-layout; just tile by pixels)
   tickSpr.fillSprite(headBg());
   tickSpr.setTextDatum(BL_DATUM);
   tickSpr.setTextWrap(false);
 
-  // Pixel-scrolling only: wrap by the render width
   const int modScroll = (sRenderPx > 0) ? (scrollPx % sRenderPx) : 0;
   const int x0 = PAD - modScroll;
 
-  // Draw the text strip enough times to fully cover the band width (shadow + main)
   for (int tileX = x0; tileX < PAD + availPx; tileX += sRenderPx){
     tickSpr.setTextColor(TFT_BLACK, headBg()); tickSpr.drawString(sRender, tileX+1, baseY+1);
     tickSpr.setTextColor(TFT_WHITE, headBg()); tickSpr.drawString(sRender, tileX,   baseY);
   }
 
-  // Draw bullets at each separator position, tiled the same way
   auto drawDiamondAt = [&](int px){
-    // [TRAKKR] Smaller diamond and real spacing (gap) either side
-    const int sz  = max(5, min(9, fh - 7));           // size
-    const int pad = max(3, min(8, (fh/5) + 2));       // horizontal gap either side
+    const int sz  = max(5, min(9, fh - 7));
+    const int pad = max(3, min(8, (fh/5) + 2));
     const int cx  = px;
     const int cy  = TICKER_H / 2;
 
-    // Clear a narrow band behind the diamond to produce visible spacing
     int clearW = sz + 2 * pad;
     int clearH = fh + 6;
     int clearX = cx - clearW / 2;
@@ -583,12 +520,11 @@ static void drawTicker_FS(){
     if (clearX + clearW > W) clearW = W - clearX;
     if (clearW > 0) tickSpr.fillRect(clearX, clearY, clearW, clearH, headBg());
 
-    // Draw the diamond
     tickSpr.fillTriangle(cx, cy - sz/2,  cx - sz/2, cy,  cx, cy + sz/2, TFT_WHITE);
     tickSpr.fillTriangle(cx, cy - sz/2,  cx + sz/2, cy,  cx, cy + sz/2, TFT_WHITE);
   };
 
-  for (int k = 0; k < 3; ++k){ // usually 2 tiles suffice; 3 is safe
+  for (int k = 0; k < 3; ++k){
     const int tileBase = x0 + k * sRenderPx;
     if (tileBase > PAD + availPx) break;
     for (int px : sSepPx){
@@ -597,11 +533,9 @@ static void drawTicker_FS(){
     }
   }
 
-  // Push to screen and outline the band
   tickSpr.pushSprite(0, y);
   tft.drawRect(0, y, W, TICKER_H, headBr());
 
-  // (5) Advance the smooth pixel scroll
   scrollPx += TICKER_SPEED;
   if (scrollPx >= sRenderPx) scrollPx -= sRenderPx;
 }
@@ -696,9 +630,7 @@ static String extractFault(const String& body){
   return text;
 }
 
-
 static bool fetchDarwinBoard(){
-  // [TRAKKR] Debounce & mutual exclusion for network fetches
   bool okToRun = beginFetchGuard(800);
   if (!okToRun) return false;
   FetchScope guard(okToRun);
@@ -711,7 +643,6 @@ static bool fetchDarwinBoard(){
   const char* method = dep ? "GetDepartureBoard"        : "GetArrivalBoard";
   const char* reqTag = dep ? "GetDepartureBoardRequest" : "GetArrivalBoardRequest";
 
-  // ---- SOAP roundtrip ----
   String body; int code = 0;
   {
     ScopeTimer Tpost("SOAP roundtrip");
@@ -724,24 +655,20 @@ static bool fetchDarwinBoard(){
     }
   }
 
-  // ---- Parse XML ----
   {
     ScopeTimer Tparse("parse XML");
 
-    // Station title
     String loc = get1ns(body, "locationName");
     stationTitle = loc.length() ? loc : String(CRS);
 
-    // Services
     String ts = get1ns(body, "trainServices");
     if (ts.length()){
       int pos = 0; String svc;
       while ((int)services.size() < ROWS && nextTagNS(ts, "service", pos, svc)){
         Svc v;
 
-        // Core fields
         v.time = get1ns(svc, dep ? "std" : "sta");
-        v.est  = get1ns(svc, dep ? "etd" : "eta"); 
+        v.est  = get1ns(svc, dep ? "etd" : "eta");
         if (!v.est.length()) v.est = "On time";
         v.plat = get1ns(svc, "platform");
         v.oper = normalizeOper(get1ns(svc, "operator"));
@@ -750,11 +677,9 @@ static bool fetchDarwinBoard(){
         String first  = get1ns(endBlk, "location");
         v.place = get1ns(first, "locationName");
 
-        // ---- Bus replacement detection ----
-        // [TRAKKR] Prefer explicit tags when present; fall back to heuristics.
-        String stype   = get1ns(svc, "serviceType");   stype.toLowerCase();     // e.g. "train" / "bus"
-        String isBus   = get1ns(svc, "isBus");         isBus.toLowerCase();     // some feeds expose this
-        String cat     = get1ns(svc, "category");      cat.toLowerCase();       // can include "bus"
+        String stype   = get1ns(svc, "serviceType");   stype.toLowerCase();
+        String isBus   = get1ns(svc, "isBus");         isBus.toLowerCase();
+        String cat     = get1ns(svc, "category");      cat.toLowerCase();
         String plat = v.plat;  plat.toLowerCase();  plat.trim();
         String oper = v.oper;  oper.toLowerCase();  oper.trim();
 
@@ -767,45 +692,37 @@ static bool fetchDarwinBoard(){
                  oper.indexOf("bus") >= 0 ||
                  oper.indexOf("coach") >= 0)                   bus = true;
 
-        v.bus = bus;                 // requires Svc to have: bool bus = false;
+        v.bus = bus;
+        if (v.bus) v.plat = "";
 
-        // Tidy platform text for bus rows (we draw an icon later)
-        if (v.bus) v.plat = "";      // avoid stray text like "bus" in the Plat cell
-
-        // Accept only meaningful rows
         if (v.time.length() || v.place.length()) services.push_back(v);
       }
     }
 
-    // NRCC Messages — keep only first sentence for brevity
     String ms = get1ns(body, "nrccMessages");
     if (ms.length()){
       int pos = 0; String inner;
       while (nextTagNS(ms, "message", pos, inner)){
-        String txt = get1ns(inner, "text"); 
+        String txt = get1ns(inner, "text");
         if (!txt.length()) txt = inner;
 
-        // Unescape a minimal HTML entity set
         txt.replace("&nbsp;", " "); txt.replace("&amp;", "&");
         txt.replace("&lt;",  "<");  txt.replace("&gt;",  ">");
         txt.replace("&quot;","\""); txt.replace("&apos;","'");
 
-        // Strip any remaining tags
         for (;;){
           int lt = txt.indexOf('<'); if (lt < 0) break;
-          int gt = txt.indexOf('>', lt + 1);
+        int gt = txt.indexOf('>', lt + 1);
           if (gt < 0){ txt.remove(lt); break; }
           txt.remove(lt, gt - lt + 1);
         }
 
-        // Collapse spaces and trim
         for (int i = 0; i + 1 < (int)txt.length(); ){
           if (txt[i] == ' ' && txt[i+1] == ' ') txt.remove(i, 1);
           else ++i;
         }
         txt.trim();
 
-        // Keep first sentence
         txt = keepFirstSentence(txt);
 
         if (txt.length()) nrccMsgs.push_back(txt);
@@ -813,7 +730,6 @@ static bool fetchDarwinBoard(){
     }
   }
 
-  // ---- Ticker content ----
   tickerSetHasNRCC(!nrccMsgs.empty());
   tickerRefreshFilesAndOpen();
 
@@ -826,37 +742,34 @@ static bool fetchDarwinBoard(){
   return true;
 }
 
-
 // ===== APP SETUP / LOOP =====
 static void app_setup_impl(){
   Serial.begin(115200); delay(30);
   Serial.println("\n[BOOT] tft_app starting…");
   logMem("boot");
 
-  // [TRAKKR] Hand-off baseline — do NOT re-init/rotate here
-  tft.endWrite();                // close any prior transaction
-  tft.setSwapBytes(false);       // JPEG code toggles this; reset now
+  // Baseline reset
+  tft.endWrite();
+  tft.setSwapBytes(false);
   tft.setTextDatum(TL_DATUM);
   tft.setFreeFont(&NationalRailTiny);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-
-  // Ensure we don’t show a white frame during hand-off
   tft.fillScreen(TFT_BLACK);
 
-  bootInit();
-  headerInit();
-  setTitle(String(CRS));
+  // ===== Show ONLY a full-screen loading message (no title bar yet) =====
+  showLoadingBoardFull();
 
-  bootShow("Mounting FS…");
-  if (!fsBegin()) { bootShow("FS mount failed"); Serial.printf("[FS][ERR] %s mount failed\n", kFSName); }
+  // Background setup (no on-screen boxes)
+  Serial.println("[TRAKKR] Mounting FS…");
+  if (!fsBegin()) { Serial.printf("[FS][ERR] %s mount failed\n", kFSName); }
   else { Serial.printf("[FS] %s mounted\n", kFSName); }
 
-  bootShow("Connecting to Wi-Fi…");
+  Serial.println("[TRAKKR] Ensuring Wi-Fi…");
   ensureWiFi();
-  bootShow(WiFi.status()==WL_CONNECTED ? "Wi-Fi connected" : "Wi-Fi failed");
 
-  bootShow("Setting time…");
-  setupClockTZ(); waitForTime(6000); drawClockIfChanged(); scheduleNextMinute();
+  Serial.println("[TRAKKR] Ensuring time…");
+  ensureTime();
+  // (Do NOT draw the clock yet; header isn’t on screen.)
 
   { size_t before=ESP.getFreeHeap();
     tickSpr.setColorDepth(16);
@@ -867,15 +780,21 @@ static void app_setup_impl(){
     checkHeap("after sprite alloc");
   }
 
-  bootShow("Loading station data…");
+  // Fetch Darwin data while "Loading Board" is visible
   bool okFetch = (WiFi.status()==WL_CONNECTED) ? fetchDarwinBoard() : false;
   if (!tickFile) openTicker();
-  bootHide();
 
+  // ===== Now build the header & paint the full board =====
   if (!gTftMutex) gTftMutex = xSemaphoreCreateMutex();
   if (xSemaphoreTake(gTftMutex, pdMS_TO_TICKS(200))){
     ScopeTimer Tpaint("first paint");
-    setTitle(stationTitle);
+
+    bootInit();                    // draws header band
+    headerInit();                  // compute clock geometry
+    setTitle(stationTitle);        // title text
+    drawClockIfChanged();          // safe now header exists
+    scheduleNextMinute();
+
     tft.fillRect(0, HEADER_H, W, H-HEADER_H, bodyBg());
     drawColHeader();
     drawRows();
