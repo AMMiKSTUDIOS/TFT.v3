@@ -2,10 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
   <title>TRAKKR • Control Panel</title>
   <meta name="color-scheme" content="light dark" />
 
@@ -30,7 +27,6 @@
     --switchTrack:#ffffff1a;
     --shade:#0008;
   }
-  /* User-selected light mode override (via data-theme on <html>) */
   [data-theme="light"]{
     --bg:#f5f7fb;
     --panel:#ffffff;
@@ -60,75 +56,50 @@
     width:100%; max-width:var(--maxw); display:flex; align-items:center; gap:10px;
   }
 
-  /* --- FIXED BUTTON CENTERING --- */
+  /* Buttons */
   .hamburger,
   .theme-toggle{
     width:40px; height:40px;
     border-radius:10px;
     border:1px solid #0000;
     background:var(--panel);
-    display:flex;                 /* was grid → flex */
+    display:flex;
     align-items:center;
     justify-content:center;
     cursor:pointer;
     outline:none;
     box-shadow:0 10px 30px var(--elev);
     padding:0;
-    line-height:0;                /* remove font/emoji padding */
+    line-height:0;
   }
   .hamburger:focus-visible,
-  .theme-toggle:focus-visible{
-    box-shadow:0 0 0 2px var(--accent);
-  }
-  .hamburger span{
-    display:block;
-    width:18px; height:2px;
-    background:var(--text);
-    position:relative;
-  }
+  .theme-toggle:focus-visible{ box-shadow:0 0 0 2px var(--accent); }
+  .hamburger span{ display:block; width:18px; height:2px; background:var(--text); position:relative; }
   .hamburger span::before,
-  .hamburger span::after{
-    content:""; position:absolute; left:0; right:0;
-    height:2px; background:var(--text);
-  }
+  .hamburger span::after{ content:""; position:absolute; left:0; right:0; height:2px; background:var(--text); }
   .hamburger span::before{ top:-6px }
   .hamburger span::after{  top: 6px }
 
   .title{ font-weight:700; margin-left:6px }
   .spacer{ flex:1 }
 
-  /* Sun/Moon icon */
-  .theme-toggle{
-    font-size:16px; color:var(--text); border:1px solid var(--border);
-  }
-  .theme-toggle .icon{
-    font-size:18px;
-    line-height:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .theme-toggle .label{ display:none } /* icon-only */
+  .theme-toggle{ font-size:16px; color:var(--text); border:1px solid var(--border); }
+  .theme-toggle .icon{ font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; }
+  .theme-toggle .label{ display:none }
 
-  main{
-    width:100%; display:flex; justify-content:center; padding:10px 12px 40px;
-  }
+  main{ width:100%; display:flex; justify-content:center; padding:10px 12px 40px; }
   .card{
     width:100%; max-width:var(--maxw); background:var(--panel);
     border-radius:var(--radius); padding:16px; box-shadow:0 10px 30px var(--elev);
     border:1px solid var(--border);
   }
   form{ display:grid; gap:var(--gap) }
-  fieldset{
-    border:1px solid var(--border); border-radius:12px; padding:12px;
-  }
+  fieldset{ border:1px solid var(--border); border-radius:12px; padding:12px; }
   legend{ padding:0 6px; color:var(--muted); font-weight:600; font-size:12px }
   .row{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
   .row-3{ grid-template-columns:1fr 1fr 1fr; }
   .row-4{ grid-template-columns:repeat(4,1fr) }
-  @media (max-width:800px){
-    .row,.row-3,.row-4{ grid-template-columns:1fr }
-  }
+  @media (max-width:800px){ .row,.row-3,.row-4{ grid-template-columns:1fr } }
   label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px }
   input[type="text"], select, input[type="time"], input[type="number"]{
     width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
@@ -158,42 +129,20 @@
   .danger{ background:var(--danger) }
   .divider{ height:1px; background:var(--border); margin:6px 0 }
 
-  /* Hamburger Drawer — forced dark regardless of theme */
-      .drawer {
-      position:fixed;
-      inset:0;
-      display:none;
-      z-index:1000;   /* make sure drawer is on top */
-    }
-
+  /* Drawer */
+  .drawer { position:fixed; inset:0; display:none; z-index:1000; }
   .drawer.open{ display:block }
-  .drawer .shade{
-    position:absolute; inset:0; background:#0008; z-index:0;
-  }
-  /* Make panel a column container so footer sits at the bottom */
+  .drawer .shade{ position:absolute; inset:0; background:#0008; z-index:0; }
   .drawer .panel{
-    position:absolute; top:0; left:0; bottom:0;
-    width:min(84vw,340px);
+    position:absolute; top:0; left:0; bottom:0; width:min(84vw,340px);
     background:#14181d; color:#e7edf3; padding:14px;
     box-shadow:0 10px 30px #00000066; border-right:1px solid #ffffff1a;
-    z-index:1;
-    display:flex;                 /* NEW */
-    flex-direction:column;        /* NEW */
+    z-index:1; display:flex; flex-direction:column;
   }
-
-  /* Let the menu take remaining height; scroll if needed */
-  .drawer .panel .menu{ flex:1; overflow:auto; }  /* NEW */
-
-  .panel-footer{                 /* NEW */
-    margin-top:auto;
-    padding-top:10px;
-    border-top:1px solid #ffffff1a;
-    color:#9aa7b2;
-    font-size:12px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:8px;
+  .drawer .panel .menu{ flex:1; overflow:auto; }
+  .panel-footer{
+    margin-top:auto; padding-top:10px; border-top:1px solid #ffffff1a;
+    color:#9aa7b2; font-size:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;
   }
   .panel-footer .mono{
     font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -205,34 +154,15 @@
     margin-bottom:10px; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
   }
   .menu .btn.danger{ background:#ff5d5d; color:#fff }
-
-  /* Close button styling */
-  .close-btn {
-  position:absolute;
-  top:10px; right:10px;
-  background:none;
-  border:0;
-  font-size:22px;
-  color:#e7edf3;
-  cursor:pointer;
-  }
-  .close-btn:hover,
-  .close-btn:focus {
-    color:var(--accent);
-  }
+  .close-btn { position:absolute; top:10px; right:10px; background:none; border:0; font-size:22px; color:#e7edf3; cursor:pointer; }
+  .close-btn:hover, .close-btn:focus { color:var(--accent); }
 
   /* Toast */
-  .toast{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:18px; background:#000d; color:#fff; padding:10px 14px; border-radius:12px;
-    opacity:0; pointer-events:none; transition:.25s;
-  }
+  .toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; background:#000d; color:#fff; padding:10px 14px; border-radius:12px; opacity:0; pointer-events:none; transition:.25s; }
   .toast.show{ opacity:1 }
 
-  /* Center header title */
   .center-header{ flex:1; display:flex; justify-content:center; gap:6px }
 </style>
-
 
   <!-- Theme loader (runs early; toggler uses its API) -->
   <script src="theme.js" defer></script>
@@ -241,13 +171,10 @@
   <header>
     <div class="bar">
       <button class="hamburger" id="btnMenu" aria-label="Open menu"><span></span></button>
-      <div class="center-header">
-        <div class="title">&nbsp;</div>
-      </div>
+      <div class="center-header"><div class="title">&nbsp;</div></div>
       <div class="spacer"></div>
       <button class="theme-toggle" id="btnTheme" aria-label="Toggle theme" title="Toggle light/dark">
-        <span class="icon" aria-hidden="true">🌙</span>
-        <span class="label">Theme</span>
+        <span class="icon" aria-hidden="true">🌙</span><span class="label">Theme</span>
       </button>
     </div>
   </header>
@@ -257,7 +184,19 @@
       <form id="form">
         <!-- Data Source -->
         <fieldset>
-          <legend>Data Source</legend>
+          <legend>Data Source X</legend>
+
+          <!-- NR only -->
+          <div id="selectTransportMode" class="row" aria-live="polite">
+            <div>
+              <label>Mode</label>
+              <div class="row">
+                <label class="switch"><input type="radio" name="selectMode" value="NR" checked /> <span>NR</span></label>
+                <label class="switch"><input type="radio" name="selectMode" value="TFL" /> <span>TFL</span></label>
+              </div>
+            </div>
+          </div>
+
           <div class="row">
             <div>
               <label for="source">Source</label>
@@ -267,13 +206,122 @@
               </select>
               <div class="hint">Choose the network to display.</div>
             </div>
+
             <div>
               <label for="station">Station</label>
-              <input id="station" name="station" type="text" placeholder="e.g., London Waterloo / WAT" autocomplete="off" list="stations-list"/>
-              <datalist id="stations-list"><!-- populated later --></datalist>
-              <div class="hint">Type name or CRS code. (Autocomplete to be added.)</div>
+              <input id="station" name="station_display" type="text"
+                     placeholder="e.g., London Waterloo / WAT"
+                     autocomplete="off" list="stations-list">
+              <datalist id="stations-list"></datalist>
+              <input type="hidden" id="station_crs" name="station_crs">
+              <div class="hint"><span id="stationsMeta">Stations: loading…</span> Start typing a station name or CRS.</div>
             </div>
-          </div>
+
+                  <script>
+                    // ---- Path to your JSON ----
+                    const STATIONS_URL = '/stations.min.json';
+
+                    // Elements
+                    const stationInput  = document.getElementById('station');
+                    const stationHidden = document.getElementById('station_crs');
+                    const stationList   = document.getElementById('stations-list');
+                    const stationsMeta  = document.getElementById('stationsMeta');
+
+                    // State
+                    let STATIONS = [];                 // [{stationName, crsCode}]
+                    const byCrs = new Map();           // CRS -> Name
+                    const displayOf = (name, crs) => `${name} (${crs})`;
+
+                    // Load stations (single URL, no fallback)
+                    async function loadStations(){
+                      stationsMeta.textContent = 'Loading stations…';
+                      try{
+                        const r = await fetch(STATIONS_URL, { cache:'no-store' });
+                        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+                        const ct = (r.headers.get('content-type') || '').toLowerCase();
+                        const raw = ct.includes('application/json') ? await r.json() : JSON.parse(await r.text());
+
+                        STATIONS = raw.map(x => ({
+                          stationName: x.stationName || x.name,
+                          crsCode: String(x.crsCode || x.crs || '').toUpperCase()
+                        })).filter(s => s.stationName && /^[A-Z]{3}$/.test(s.crsCode));
+
+                        if (!STATIONS.length) throw new Error('No valid stations in JSON');
+
+                        byCrs.clear();
+                        STATIONS.forEach(s => byCrs.set(s.crsCode, s.stationName));
+
+                        renderStations();
+                        stationsMeta.textContent = `Stations loaded: ~${STATIONS.length}. Start typing a station name or CRS.`;
+                      }catch(err){
+                        stationsMeta.textContent = `Stations failed to load (${err.message}).`;
+                        console.error('Stations load error:', err);
+                      }
+                    }
+
+                    // Build datalist with BOTH "Name (CRS)" and "CRS" for native prefix matching
+                    function renderStations(){
+                      stationList.innerHTML = '';
+                      const frag = document.createDocumentFragment();
+                      for (const s of STATIONS){
+                        const a = document.createElement('option'); // Name (CRS)
+                        a.value = displayOf(s.stationName, s.crsCode);
+                        a.dataset.crs = s.crsCode;
+                        frag.appendChild(a);
+
+                        const b = document.createElement('option'); // CRS
+                        b.value = s.crsCode;
+                        b.dataset.crs = s.crsCode;
+                        frag.appendChild(b);
+                      }
+                      stationList.appendChild(frag);
+                    }
+
+                    // Normalise UI to "Name (CRS)" and set hidden CRS
+                    function setFromCRS(crs){
+                      const code = String(crs||'').toUpperCase();
+                      const name = byCrs.get(code);
+                      if (!name) return false;
+                      stationInput.value  = displayOf(name, code);
+                      stationHidden.value = code;
+                      return true;
+                    }
+
+                    // Resolve what the user typed/selected
+                    function syncFromInput(){
+                      const v = stationInput.value.trim();
+
+                      // Exact option match (either "Name (CRS)" or "CRS")
+                      const opt = Array.from(stationList.options).find(o => o.value === v);
+                      if (opt?.dataset?.crs){ setFromCRS(opt.dataset.crs); return; }
+
+                      // "Name (CRS)" typed manually
+                      const m = v.match(/\(([A-Za-z]{3})\)\s*$/);
+                      if (m && setFromCRS(m[1])) return;
+
+                      // Bare CRS typed (case-insensitive)
+                      if (/^[A-Za-z]{3}$/.test(v)) { setFromCRS(v); return; }
+
+                      // Unknown/incomplete
+                      stationHidden.value = '';
+                    }
+
+                    // UX: clear on focus; restore previous if untouched
+                    stationInput.addEventListener('focus', e => {
+                      const i = e.target;
+                      i.dataset.old = i.value;
+                      i.value = '';
+                      i.dataset.changed = '';
+                    });
+                    stationInput.addEventListener('input', e => { e.target.dataset.changed = '1'; });
+                    stationInput.addEventListener('change', syncFromInput);
+                    stationInput.addEventListener('blur', e => {
+                      syncFromInput();
+                      const i = e.target;
+                      if (!i.dataset.changed){ i.value = i.dataset.old || ''; }
+                      delete i.dataset.changed; delete i.dataset.old;
+                    });
+                  </script>
 
           <!-- NR only -->
           <div id="nrOnly" class="row" aria-live="polite">
@@ -396,9 +444,7 @@
   <div class="drawer" id="drawer" aria-hidden="true">
     <div class="shade" id="shade" tabindex="-1" aria-label="Close menu"></div>
     <aside class="panel">
-      <!-- Close button -->
       <button class="close-btn" id="btnCloseDrawer" aria-label="Close menu">✕</button>
-
       <nav class="menu">
         <h3>Device</h3>
         <button class="btn danger" id="btnSwitch">API Management</button>
@@ -418,7 +464,6 @@
         <button class="btn" id="btnCheckUpdates">Check for firmware updates</button>
         <button class="btn" id="btnResetAll">Factory reset</button>
       </nav>
-
       <div class="panel-footer">
         <span>TRAKKR</span>
         <span class="mono" id="buildInfo">Version unknown</span>
@@ -428,57 +473,30 @@
   <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
 
   <script>
-    // --- Minimal helper utils ---
-    const $ = sel => document.querySelector(sel);
+    /* ---------- tiny helpers ---------- */
+    const $ = s => document.querySelector(s);
     const show = (el, v=true) => { el.hidden = !v; };
-    const toast = (msg, ms=1400) => {
-      const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'), ms);
-    };
-    const debounce = (fn, ms=250) => {
-      let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a), ms); };
-    };
+    const toast = (msg, ms=1400) => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); };
+    const debounce = (fn, ms=250) => { let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a), ms); }; };
     const fetchJSON = async (url, opts={}) => {
       const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), 8000);
-      try { const r = await fetch(url, { ...opts, headers: { 'Content-Type':'application/json', ...(opts.headers||{}) }, signal: ctrl.signal });
+      try { const r = await fetch(url, { ...opts, headers:{'Content-Type':'application/json', ...(opts.headers||{})}, signal:ctrl.signal });
             if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
-            const ct = r.headers.get('content-type')||"";
-            return ct.includes('application/json') ? r.json() : r.text();
+            const ct = r.headers.get('content-type')||""; return ct.includes('application/json') ? r.json() : r.text();
       } finally { clearTimeout(t); }
     };
 
-
-    // Theme toggle (safe if theme.js isn't present)
-    const btnTheme = document.querySelector('#btnTheme');
-
-    function getTheme() {
-      return (window.__trakkrTheme && typeof window.__trakkrTheme.get === 'function')
-        ? window.__trakkrTheme.get()
-        : (document.documentElement.getAttribute('data-theme') || 'dark');
-    }
-    function setTheme(mode){
-      if (window.__trakkrTheme && typeof window.__trakkrTheme.set === 'function') {
-        window.__trakkrTheme.set(mode);
-      } else {
-        document.documentElement.setAttribute('data-theme', mode);
-      }
-      reflectThemeIcon();
-    }
-    function toggleTheme(){
-      setTheme(getTheme() === 'dark' ? 'light' : 'dark');
-    }
-    function reflectThemeIcon(){
-      const t = getTheme();
-      btnTheme.querySelector('.icon').textContent = (t === 'light') ? '🌙' : '☀️';
-      btnTheme.title = `Switch to ${t === 'light' ? 'dark' : 'light'} mode`;
-    }
-
+    /* ---------- theme toggle ---------- */
+    const btnTheme = $('#btnTheme');
+    function getTheme(){ return (window.__trakkrTheme?.get?.() ?? document.documentElement.getAttribute('data-theme') ?? 'dark'); }
+    function setTheme(mode){ if (window.__trakkrTheme?.set) { window.__trakkrTheme.set(mode); } else { document.documentElement.setAttribute('data-theme', mode); } reflectThemeIcon(); }
+    function toggleTheme(){ setTheme(getTheme()==='dark'?'light':'dark'); }
+    function reflectThemeIcon(){ const t=getTheme(); btnTheme.querySelector('.icon').textContent = (t==='light')?'🌙':'☀️'; btnTheme.title=`Switch to ${t==='light'?'dark':'light'} mode`; }
     btnTheme.addEventListener('click', toggleTheme);
     window.addEventListener('trakkr-theme-changed', reflectThemeIcon);
     reflectThemeIcon();
 
-
-    // --- Elements ---
+    /* ---------- elements ---------- */
     const elForm = $('#form');
     const elSource = $('#source');
     const elNrOnly = $('#nrOnly');
@@ -487,36 +505,37 @@
     const elBrightness = $('#brightness');
     const elBrightnessVal = $('#brightnessVal');
 
-    // --- UI logic ---
     function applySourceVisibility(){
       const isNR = elSource.value === 'national-rail';
-      show(elNrOnly, isNR);
-      show(elWeatherWrap, isNR);
-      show(elTubeOnly, !isNR);
+      show(elNrOnly, isNR); show(elWeatherWrap, isNR); show(elTubeOnly, !isNR);
     }
     elSource.addEventListener('change', applySourceVisibility);
 
-    // immediate save for brightness (debounced)
-    function reflectBrightnessLabel(){
-      elBrightnessVal.textContent = String(elBrightness.value);
-    }
+    function reflectBrightnessLabel(){ elBrightnessVal.textContent = String(elBrightness.value); }
     const pushBrightness = debounce(async (val)=>{
-      try{
-        await fetchJSON('/api/brightness', { method:'POST', body: JSON.stringify({ value: Number(val) }) });
-        // No toast to avoid spam. Silent success.
-      }catch(e){
-        toast('Brightness save failed');
-      }
+      try{ await fetchJSON('/api/brightness', { method:'POST', body: JSON.stringify({ value:Number(val) }) }); }
+      catch{ toast('Brightness save failed'); }
     }, 300);
-    elBrightness.addEventListener('input', (e)=>{ reflectBrightnessLabel(); pushBrightness(e.target.value); });
+    elBrightness.addEventListener('input', e=>{ reflectBrightnessLabel(); pushBrightness(e.target.value); });
 
-    // load existing settings
+    /* ---------- settings load/save ---------- */
     async function loadSettings(){
       try{
         const s = await fetchJSON('/api/settings', { method:'GET' });
+
         if (s.source) elSource.value = s.source;
-        if (s.station) $('#station').value = s.station;
-        if (s.nrBoardType) {
+        if (typeof s.brightness === 'number'){ elBrightness.value = s.brightness; reflectBrightnessLabel(); }
+
+        // Station: prefer stored CRS and render as "Name (CRS)"
+        const savedCrs = s.station_crs || s.station || s.crs || '';  // accept legacy "station"
+        if (!setFromCRS(savedCrs)){
+          // fallback: if a display string was stored, keep it but try to derive CRS
+          if (s.station_display) stationInput.value = s.station_display;
+          else if (s.station) stationInput.value = s.station; // legacy
+          syncFromInput();
+        }
+
+        if (s.nrBoardType){
           const r = document.querySelector(`input[name="nrBoardType"][value="${s.nrBoardType}"]`);
           if (r) r.checked = true;
         }
@@ -529,22 +548,31 @@
         if (typeof s.updateEvery === 'number') $('#updateEvery').value = s.updateEvery;
         if (s.ssStart) $('#ssStart').value = s.ssStart;
         if (s.ssEnd)   $('#ssEnd').value   = s.ssEnd;
-        if (typeof s.brightness === 'number') { elBrightness.value = s.brightness; reflectBrightnessLabel(); }
         if (s.line) $('#line').value = s.line;
         if (s.direction) $('#direction').value = s.direction;
+
         applySourceVisibility();
-      }catch(e){
+      }catch{
         applySourceVisibility();
       }
     }
 
-    // save settings (one shot)
     elForm.addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       $('#btnSave').disabled = true;
+
+      // Ensure hidden CRS is in sync before save
+      syncFromInput();
+      const code = (stationHidden.value || '').toUpperCase();
+      const display = stationInput.value.trim();
+
       const data = {
+        // keep both for backward/forward compatibility
+        station: code,                // <- legacy/firmware expects this
+        station_crs: code,            // <- new key you introduced
+        station_display: display,
+
         source: elSource.value,
-        station: $('#station').value.trim(),
         nrBoardType: (document.querySelector('input[name="nrBoardType"]:checked')||{}).value || 'arrivals',
         callingAt: $('#callingAt').value.trim(),
         includeBus: $('#includeBus').checked,
@@ -556,140 +584,70 @@
         ssStart: $('#ssStart').value || "23:00",
         ssEnd: $('#ssEnd').value || "06:00",
         brightness: Number(elBrightness.value),
-        // Underground
         line: $('#line').value,
         direction: $('#direction').value,
       };
+
       try{
         await fetchJSON('/api/settings', { method:'POST', body: JSON.stringify(data) });
-        toast('Settings saved'); 
-      }catch(e){
+        toast('Settings saved');
+      }catch{
         toast('Save failed');
       }finally{
         $('#btnSave').disabled = false;
       }
     });
 
-    // Version info for side panel display
+
+    // Version info for side panel
     (async () => {
       const el = document.getElementById('buildInfo');
       if (!el) return;
-
       try {
-        const res = await fetch('/api/version', { cache: 'no-store' });
-        if (!res.ok) throw new Error('bad status');
-
+        const res = await fetch('/api/version', { cache:'no-store' });
+        if (!res.ok) throw 0;
         const ct = res.headers.get('content-type') || '';
         let info;
-
-        if (ct.includes('application/json')) {
-          info = await res.json();
-        } else {
-          // Try text → JSON; fall back to treating it as the version string
+        if (ct.includes('application/json')) info = await res.json();
+        else {
           const text = (await res.text()).trim();
-          try { info = JSON.parse(text); }
-          catch { info = { version: text }; }
+          try { info = JSON.parse(text); } catch { info = { version: text }; }
         }
-
-        const ver   = info.version || info.appVersion || info.versionName || '';
-        const build = info.build   || info.buildNumber || info.commit || info.sha || '';
-        const date  = info.date    || info.builtAt     || info.buildDate || '';
-
+        const ver = info.version || info.appVersion || '';
+        const build = info.build || info.buildNumber || info.commit || '';
         const parts = [];
-        if (ver)   parts.push('v' + ver);
-        if (build) parts.push('build ' + build);
-
+        if (ver) parts.push('v'+ver);
+        if (build) parts.push('build '+build);
         el.textContent = parts.length ? parts.join(' • ') : 'Version unknown';
       } catch {
-        // Optional last-ditch: use a compile-time global if you inject one
-        if (window.__BUILD__ && (window.__BUILD__.version || window.__BUILD__.build)) {
-          const b = window.__BUILD__;
-          el.textContent = [
-            b.version && ('v' + b.version),
-            b.build && ('build ' + b.build)
-          ].filter(Boolean).join(' • ');
-        } else {
-          el.textContent = 'Version unknown';
-        }
+        el.textContent = 'Version unknown';
       }
     })();
 
-    // reload
+    // Reload, drawer, and menu links
     $('#btnReload').addEventListener('click', loadSettings);
-
-    // Drawer logic
-    const drawer = $('#drawer'),
-          shade  = $('#shade'),
-          btnMenu = $('#btnMenu');
-
-    function openDrawer(){
-      drawer.classList.add('open');
-      drawer.setAttribute('aria-hidden','false');
-    }
-    function closeDrawer(){
-      drawer.classList.remove('open');
-      drawer.setAttribute('aria-hidden','true');
-    }
-
+    const drawer = $('#drawer'), shade = $('#shade'), btnMenu = $('#btnMenu');
+    const openDrawer = () => { drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); };
+    const closeDrawer = () => { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); };
     btnMenu.addEventListener('click', openDrawer);
     shade.addEventListener('click', closeDrawer);
+    const btnClose = document.getElementById('btnCloseDrawer'); if (btnClose) btnClose.addEventListener('click', closeDrawer);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+    $('#btnSwitch').addEventListener('click', ()=>{ closeDrawer(); setTimeout(()=> location.href='/token.htm', 150); });
+    $('#btnCheckUpdates').addEventListener('click', async ()=>{ try{ await fetchJSON('/api/firmware/check', { method:'POST' }); toast('Checking…'); }catch{ toast('Check failed'); } closeDrawer(); });
+    $('#btnRestart').addEventListener('click', async ()=>{ try{ await fetchJSON('/reboot', { method:'POST' }); toast('Restarting…'); }catch{ toast('Restart failed'); } closeDrawer(); });
+    $('#btnResetWifi').addEventListener('click', async ()=>{ if (!confirm('Reset Wi-Fi settings?')) return; try{ await fetchJSON('/api/reset-wifi', { method:'POST' }); toast('Wi-Fi reset requested'); }catch{ toast('Reset failed'); } closeDrawer(); });
+    $('#btnResetAll').addEventListener('click', async ()=>{ if (!confirm('Factory reset? This clears all settings.')) return; try{ await fetchJSON('/api/factory-reset', { method:'POST' }); toast('Resetting…'); }catch{ toast('Reset failed'); } closeDrawer(); });
+    $('#btnSupport').addEventListener('click', ()=>{ closeDrawer(); location.href='mailto:support@trakkr.uk?subject=TRAKKR Support'; });
+    $('#btnFAQ').addEventListener('click', ()=>{ closeDrawer(); window.open('https://www.trakkr.uk/faq','_blank','noopener'); });
+    $('#btnRail').addEventListener('click', ()=>{ closeDrawer(); window.open('https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/Registration','_blank','noopener'); });
+    $('#btnTfL').addEventListener('click', ()=>{ closeDrawer(); window.open('https://api-portal.tfl.gov.uk/signup','_blank','noopener'); });
+    $('#btnWeather').addEventListener('click', ()=>{ closeDrawer(); window.open('https://home.openweathermap.org/users/sign_up','_blank','noopener'); });
 
-    const btnClose = document.getElementById('btnCloseDrawer');
-    if (btnClose) btnClose.addEventListener('click', closeDrawer);
-
-    window.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeDrawer();
-    });
-
-    // Menu actions (stub endpoints for now)
-    $('#btnSwitch').addEventListener('click', ()=>{
-      closeDrawer();
-      setTimeout(()=> window.location.href = '/token.htm', 150); // small delay so drawer anim closes first
-    });
-    $('#btnCheckUpdates').addEventListener('click', async ()=>{
-      try{ await fetchJSON('/api/firmware/check', { method:'POST' }); toast('Checking…'); }catch(e){ toast('Check failed'); }
-      closeDrawer();
-    });
-    $('#btnRestart').addEventListener('click', async ()=>{
-      try{ await fetchJSON('/reboot', { method:'POST' }); toast('Restarting…'); }catch(e){ toast('Restart failed'); }
-      closeDrawer();
-    });
-    $('#btnResetWifi').addEventListener('click', async ()=>{
-      if (!confirm('Reset Wi-Fi settings?')) return;
-      try{ await fetchJSON('/api/reset-wifi', { method:'POST' }); toast('Wi-Fi reset requested'); }catch(e){ toast('Reset failed'); }
-      closeDrawer();
-    });
-    $('#btnResetAll').addEventListener('click', async ()=>{
-      if (!confirm('Factory reset? This clears all settings.')) return;
-      try{ await fetchJSON('/api/factory-reset', { method:'POST' }); toast('Resetting…'); }catch(e){ toast('Reset failed'); }
-      closeDrawer();
-    });
-    $('#btnSupport').addEventListener('click', ()=>{
-      closeDrawer();
-      // open a new mail draft
-      window.location.href = 'mailto:support@trakkr.uk?subject=TRAKKR Support';
-    });
-    $('#btnFAQ').addEventListener('click', ()=>{
-      closeDrawer();
-      window.open('https://www.trakkr.uk/faq', '_blank', 'noopener');
-    });
-    $('#btnRail').addEventListener('click', ()=>{
-      closeDrawer();
-      window.open('https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/Registration', '_blank', 'noopener');
-    });
-    $('#btnTfL').addEventListener('click', ()=>{
-      closeDrawer();
-      window.open('https://api-portal.tfl.gov.uk/signup', '_blank', 'noopener');
-    });
-    $('#btnWeather').addEventListener('click', ()=>{
-      closeDrawer();
-      window.open('https://home.openweathermap.org/users/sign_up', '_blank', 'noopener');
-    });
-
-    // init
+    // Boot
     reflectBrightnessLabel();
     applySourceVisibility();
-    loadSettings();
+    loadStations().then(loadSettings); // ensure CRS->Name available before rendering stored value
   </script>
 </body>
 </html>

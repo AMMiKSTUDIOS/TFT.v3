@@ -245,7 +245,7 @@ void setup() {
       Serial.println("[TRAKKR] Splash image not found, skipping");
     }
   }
-
+/*
   // Optional text splash sequence
   const char* scr1[] = { "Welcome to TRAKKR", "from AMMiKSTUDIOS" };
   showSplash(scr1, 2, 3000);
@@ -255,7 +255,7 @@ void setup() {
 
   const char* scr3[] = { "Copyright (c)2025 AMMiKSTUDIOS:", "All Rights Reserved" };
   showSplash(scr3, 2, 3000);
-
+*/
   // Wi-Fi splash (animated)
   Serial.println("[TRAKKR] Connecting Wi-Fi from main.cpp…");
   splashWifiConnect();
@@ -263,11 +263,11 @@ void setup() {
   // Time splash
   Serial.println("[TRAKKR] Setting Time from main.cpp…");
   splashTimeSync();
-
+/*
   // Control Panel info
   const char* scr5[] = { "Control Panel", "http://trakkr.local" };
   showSplash(scr5, 2, 3000);
-
+*/
   // Clear screen to avoid ghosting from splash
   tft.fillScreen(bodyBgMain());
 
