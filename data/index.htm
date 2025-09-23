@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
+  <title>TRAKKR • Control Panel</title>
+  <meta name="color-scheme" content="light dark" />
+
+<style>
+  :root{
+    /* Dark is the default; light overrides live below */
+    --bg: #0b0d10;
+    --panel: #14181d;
+    --text: #e7edf3;
+    --muted:#9aa7b2;
+    --accent:#2aa8ff;
+    --ok:#2ecc71;
+    --warn:#ffb020;
+    --danger:#ff5d5d;
+    --radius:14px;
+    --gap:14px;
+    --maxw: 920px;
+    --border:#ffffff1f;
+    --elev:#00000033;
+    --elev2:#00000066;
+    --btnghost:#ffffff22;
+    --switchTrack:#ffffff1a;
+    --shade:#0008;
+  }
+  /* User-selected light mode override (via data-theme on <html>) */
+  [data-theme="light"]{
+    --bg:#f5f7fb;
+    --panel:#ffffff;
+    --text:#0d1117;
+    --muted:#546270;
+    --accent:#0077ff;
+    --border:#0000001a;
+    --elev:#0000001a;
+    --elev2:#00000033;
+    --btnghost:#00000010;
+    --switchTrack:#0000001a;
+    --shade:#0006;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    display:flex; flex-direction:column; align-items:center;
+  }
+  header{
+    width:100%; display:flex; align-items:center; justify-content:center;
+    position:sticky; top:0; background:transparent; padding:10px 12px; z-index:5;
+  }
+  .bar{
+    width:100%; max-width:var(--maxw); display:flex; align-items:center; gap:10px;
+  }
+
+  /* --- FIXED BUTTON CENTERING --- */
+  .hamburger,
+  .theme-toggle{
+    width:40px; height:40px;
+    border-radius:10px;
+    border:1px solid #0000;
+    background:var(--panel);
+    display:flex;                 /* was grid → flex */
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    outline:none;
+    box-shadow:0 10px 30px var(--elev);
+    padding:0;
+    line-height:0;                /* remove font/emoji padding */
+  }
+  .hamburger:focus-visible,
+  .theme-toggle:focus-visible{
+    box-shadow:0 0 0 2px var(--accent);
+  }
+  .hamburger span{
+    display:block;
+    width:18px; height:2px;
+    background:var(--text);
+    position:relative;
+  }
+  .hamburger span::before,
+  .hamburger span::after{
+    content:""; position:absolute; left:0; right:0;
+    height:2px; background:var(--text);
+  }
+  .hamburger span::before{ top:-6px }
+  .hamburger span::after{  top: 6px }
+
+  .title{ font-weight:700; margin-left:6px }
+  .spacer{ flex:1 }
+
+  /* Sun/Moon icon */
+  .theme-toggle{
+    font-size:16px; color:var(--text); border:1px solid var(--border);
+  }
+  .theme-toggle .icon{
+    font-size:18px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .theme-toggle .label{ display:none } /* icon-only */
+
+  main{
+    width:100%; display:flex; justify-content:center; padding:10px 12px 40px;
+  }
+  .card{
+    width:100%; max-width:var(--maxw); background:var(--panel);
+    border-radius:var(--radius); padding:16px; box-shadow:0 10px 30px var(--elev);
+    border:1px solid var(--border);
+  }
+  form{ display:grid; gap:var(--gap) }
+  fieldset{
+    border:1px solid var(--border); border-radius:12px; padding:12px;
+  }
+  legend{ padding:0 6px; color:var(--muted); font-weight:600; font-size:12px }
+  .row{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
+  .row-3{ grid-template-columns:1fr 1fr 1fr; }
+  .row-4{ grid-template-columns:repeat(4,1fr) }
+  @media (max-width:800px){
+    .row,.row-3,.row-4{ grid-template-columns:1fr }
+  }
+  label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px }
+  input[type="text"], select, input[type="time"], input[type="number"]{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+    background:#0000; color:var(--text);
+  }
+  .switch{ display:flex; align-items:center; gap:10px }
+  .switch input{
+    width:42px; height:22px; appearance:none; background:var(--switchTrack);
+    border-radius:999px; position:relative; outline:none; cursor:pointer; transition:.2s;
+  }
+  .switch input:checked{ background:var(--accent) }
+  .switch input::after{
+    content:""; position:absolute; top:3px; left:3px; width:16px; height:16px;
+    border-radius:50%; background:#fff; transition:.2s transform;
+  }
+  .switch input:checked::after{ transform:translateX(20px) }
+  .hint{ color:var(--muted); font-size:12px }
+  .actions{ display:flex; gap:10px; justify-content:flex-end; }
+  button{
+    appearance:none; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+    background:var(--accent); color:#fff; font-weight:700;
+    box-shadow:0 10px 30px var(--elev);
+  }
+  button[disabled]{ opacity:.6; cursor:default }
+  .ghost{ background:var(--btnghost); color:var(--text) }
+  .ok{ background:var(--ok) }
+  .danger{ background:var(--danger) }
+  .divider{ height:1px; background:var(--border); margin:6px 0 }
+
+  /* Hamburger Drawer — forced dark regardless of theme */
+      .drawer {
+      position:fixed;
+      inset:0;
+      display:none;
+      z-index:1000;   /* make sure drawer is on top */
+    }
+
+  .drawer.open{ display:block }
+  .drawer .shade{
+    position:absolute; inset:0; background:#0008; z-index:0;
+  }
+  /* Make panel a column container so footer sits at the bottom */
+  .drawer .panel{
+    position:absolute; top:0; left:0; bottom:0;
+    width:min(84vw,340px);
+    background:#14181d; color:#e7edf3; padding:14px;
+    box-shadow:0 10px 30px #00000066; border-right:1px solid #ffffff1a;
+    z-index:1;
+    display:flex;                 /* NEW */
+    flex-direction:column;        /* NEW */
+  }
+
+  /* Let the menu take remaining height; scroll if needed */
+  .drawer .panel .menu{ flex:1; overflow:auto; }  /* NEW */
+
+  .panel-footer{                 /* NEW */
+    margin-top:auto;
+    padding-top:10px;
+    border-top:1px solid #ffffff1a;
+    color:#9aa7b2;
+    font-size:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+  .panel-footer .mono{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    opacity:.9;
+  }
+  .menu h3{ margin:8px 0 12px; font-size:14px; color:#9aa7b2 }
+  .menu .btn{
+    width:100%; text-align:left; background:#ffffff12; color:#e7edf3;
+    margin-bottom:10px; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+  }
+  .menu .btn.danger{ background:#ff5d5d; color:#fff }
+
+  /* Close button styling */
+  .close-btn {
+  position:absolute;
+  top:10px; right:10px;
+  background:none;
+  border:0;
+  font-size:22px;
+  color:#e7edf3;
+  cursor:pointer;
+  }
+  .close-btn:hover,
+  .close-btn:focus {
+    color:var(--accent);
+  }
+
+  /* Toast */
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:18px; background:#000d; color:#fff; padding:10px 14px; border-radius:12px;
+    opacity:0; pointer-events:none; transition:.25s;
+  }
+  .toast.show{ opacity:1 }
+
+  /* Center header title */
+  .center-header{ flex:1; display:flex; justify-content:center; gap:6px }
+</style>
+
+
+  <!-- Theme loader (runs early; toggler uses its API) -->
+  <script src="theme.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <button class="hamburger" id="btnMenu" aria-label="Open menu"><span></span></button>
+      <div class="center-header">
+        <div class="title">&nbsp;</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="theme-toggle" id="btnTheme" aria-label="Toggle theme" title="Toggle light/dark">
+        <span class="icon" aria-hidden="true">🌙</span>
+        <span class="label">Theme</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <form id="form">
+        <!-- Data Source -->
+        <fieldset>
+          <legend>Data Source</legend>
+          <div class="row">
+            <div>
+              <label for="source">Source</label>
+              <select id="source" name="source" required>
+                <option value="national-rail">National Rail</option>
+                <option value="underground">London Underground</option>
+              </select>
+              <div class="hint">Choose the network to display.</div>
+            </div>
+            <div>
+              <label for="station">Station</label>
+              <input id="station" name="station" type="text" placeholder="e.g., London Waterloo / WAT" autocomplete="off" list="stations-list"/>
+              <datalist id="stations-list"><!-- populated later --></datalist>
+              <div class="hint">Type name or CRS code. (Autocomplete to be added.)</div>
+            </div>
+          </div>
+
+          <!-- NR only -->
+          <div id="nrOnly" class="row" aria-live="polite">
+            <div>
+              <label>Board Type (NR)</label>
+              <div class="row">
+                <label class="switch"><input type="radio" name="nrBoardType" value="arrivals" checked /> <span>Arrivals</span></label>
+                <label class="switch"><input type="radio" name="nrBoardType" value="departures" /> <span>Departures</span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Underground only -->
+          <div id="tubeOnly" hidden>
+            <div class="row">
+              <div>
+                <label for="line">Underground Line</label>
+                <select id="line" name="line">
+                  <option value="">— Select —</option>
+                  <option>Bakerloo</option><option>Central</option><option>Circle</option>
+                  <option>District</option><option>Hammersmith & City</option>
+                  <option>Jubilee</option><option>Metropolitan</option><option>Northern</option>
+                  <option>Piccadilly</option><option>Victoria</option><option>Waterloo & City</option>
+                </select>
+              </div>
+              <div>
+                <label for="direction">Direction</label>
+                <select id="direction" name="direction">
+                  <option value="">— Select —</option>
+                  <option value="inbound">Inbound</option>
+                  <option value="outbound">Outbound</option>
+                  <option value="northbound">Northbound</option>
+                  <option value="southbound">Southbound</option>
+                  <option value="eastbound">Eastbound</option>
+                  <option value="westbound">Westbound</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Filters -->
+        <fieldset>
+          <legend>Filters</legend>
+          <div class="row-3">
+            <div>
+              <label for="callingAt">Only trains calling at</label>
+              <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
+              <div class="hint">Optional CRS or station name. (Can become multi-select later.)</div>
+            </div>
+            <div>
+              <label class="switch">
+                <input id="includeBus" name="includeBus" type="checkbox" />
+                <span>Include bus replacements</span>
+              </label>
+            </div>
+            <div>
+              <label class="switch">
+                <input id="includePass" name="includePass" type="checkbox" />
+                <span>Include ‘passing through’ trains</span>
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Extras -->
+        <fieldset>
+          <legend>Extras</legend>
+          <div class="row-3">
+            <div class="switch">
+              <input id="showDate" name="showDate" type="checkbox" />
+              <label for="showDate">Show current date</label>
+            </div>
+            <div class="switch" id="weatherWrap">
+              <input id="includeWeather" name="includeWeather" type="checkbox" />
+              <label for="includeWeather">Include local weather (NR only)</label>
+            </div>
+            <div class="switch">
+              <input id="autoUpdate" name="autoUpdate" type="checkbox" />
+              <label for="autoUpdate">Enable automatic updates</label>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="updateEvery">Update interval (seconds)</label>
+              <input id="updateEvery" name="updateEvery" type="number" min="5" step="5" value="30" />
+              <div class="hint">Used if automatic updates are enabled.</div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="ssStart">Screensaver start</label>
+                <input id="ssStart" name="ssStart" type="time" value="23:00" />
+              </div>
+              <div>
+                <label for="ssEnd">Screensaver end</label>
+                <input id="ssEnd" name="ssEnd" type="time" value="06:00" />
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="row">
+            <div>
+              <label for="brightness">Screen brightness</label>
+              <input id="brightness" name="brightness" type="range" min="1" max="255" value="180" />
+              <div class="hint" id="brightnessVal">180</div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button type="button" class="ghost" id="btnReload">Reload</button>
+          <button type="submit" id="btnSave">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Drawer -->
+  <div class="drawer" id="drawer" aria-hidden="true">
+    <div class="shade" id="shade" tabindex="-1" aria-label="Close menu"></div>
+    <aside class="panel">
+      <!-- Close button -->
+      <button class="close-btn" id="btnCloseDrawer" aria-label="Close menu">✕</button>
+
+      <nav class="menu">
+        <h3>Device</h3>
+        <button class="btn danger" id="btnSwitch">API Management</button>
+        <div class="divider"></div>
+        <h3>Get Tokens</h3>
+        <button class="btn" id="btnRail">National Rail</button>
+        <button class="btn" id="btnTfL">Transport for London</button>
+        <button class="btn" id="btnWeather">OpenWeather</button>
+        <div class="divider"></div>
+        <h3>Support</h3>
+        <button class="btn" id="btnSupport">Email Us</button>
+        <button class="btn" id="btnFAQ">Web FAQs</button>
+        <div class="divider"></div>
+        <h3>Maintenance</h3>
+        <button class="btn" id="btnRestart">Restart board</button>
+        <button class="btn" id="btnResetWifi">Reset Wi-Fi</button>
+        <button class="btn" id="btnCheckUpdates">Check for firmware updates</button>
+        <button class="btn" id="btnResetAll">Factory reset</button>
+      </nav>
+
+      <div class="panel-footer">
+        <span>TRAKKR</span>
+        <span class="mono" id="buildInfo">Version unknown</span>
+      </div>
+    </aside>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
+
+  <script>
+    // --- Minimal helper utils ---
+    const $ = sel => document.querySelector(sel);
+    const show = (el, v=true) => { el.hidden = !v; };
+    const toast = (msg, ms=1400) => {
+      const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), ms);
+    };
+    const debounce = (fn, ms=250) => {
+      let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a), ms); };
+    };
+    const fetchJSON = async (url, opts={}) => {
+      const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), 8000);
+      try { const r = await fetch(url, { ...opts, headers: { 'Content-Type':'application/json', ...(opts.headers||{}) }, signal: ctrl.signal });
+            if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
+            const ct = r.headers.get('content-type')||"";
+            return ct.includes('application/json') ? r.json() : r.text();
+      } finally { clearTimeout(t); }
+    };
+
+
+    // Theme toggle (safe if theme.js isn't present)
+    const btnTheme = document.querySelector('#btnTheme');
+
+    function getTheme() {
+      return (window.__trakkrTheme && typeof window.__trakkrTheme.get === 'function')
+        ? window.__trakkrTheme.get()
+        : (document.documentElement.getAttribute('data-theme') || 'dark');
+    }
+    function setTheme(mode){
+      if (window.__trakkrTheme && typeof window.__trakkrTheme.set === 'function') {
+        window.__trakkrTheme.set(mode);
+      } else {
+        document.documentElement.setAttribute('data-theme', mode);
+      }
+      reflectThemeIcon();
+    }
+    function toggleTheme(){
+      setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+    }
+    function reflectThemeIcon(){
+      const t = getTheme();
+      btnTheme.querySelector('.icon').textContent = (t === 'light') ? '🌙' : '☀️';
+      btnTheme.title = `Switch to ${t === 'light' ? 'dark' : 'light'} mode`;
+    }
+
+    btnTheme.addEventListener('click', toggleTheme);
+    window.addEventListener('trakkr-theme-changed', reflectThemeIcon);
+    reflectThemeIcon();
+
+
+    // --- Elements ---
+    const elForm = $('#form');
+    const elSource = $('#source');
+    const elNrOnly = $('#nrOnly');
+    const elTubeOnly = $('#tubeOnly');
+    const elWeatherWrap = $('#weatherWrap');
+    const elBrightness = $('#brightness');
+    const elBrightnessVal = $('#brightnessVal');
+
+    // --- UI logic ---
+    function applySourceVisibility(){
+      const isNR = elSource.value === 'national-rail';
+      show(elNrOnly, isNR);
+      show(elWeatherWrap, isNR);
+      show(elTubeOnly, !isNR);
+    }
+    elSource.addEventListener('change', applySourceVisibility);
+
+    // immediate save for brightness (debounced)
+    function reflectBrightnessLabel(){
+      elBrightnessVal.textContent = String(elBrightness.value);
+    }
+    const pushBrightness = debounce(async (val)=>{
+      try{
+        await fetchJSON('/api/brightness', { method:'POST', body: JSON.stringify({ value: Number(val) }) });
+        // No toast to avoid spam. Silent success.
+      }catch(e){
+        toast('Brightness save failed');
+      }
+    }, 300);
+    elBrightness.addEventListener('input', (e)=>{ reflectBrightnessLabel(); pushBrightness(e.target.value); });
+
+    // load existing settings
+    async function loadSettings(){
+      try{
+        const s = await fetchJSON('/api/settings', { method:'GET' });
+        if (s.source) elSource.value = s.source;
+        if (s.station) $('#station').value = s.station;
+        if (s.nrBoardType) {
+          const r = document.querySelector(`input[name="nrBoardType"][value="${s.nrBoardType}"]`);
+          if (r) r.checked = true;
+        }
+        if (s.callingAt) $('#callingAt').value = s.callingAt;
+        $('#includeBus').checked  = !!s.includeBus;
+        $('#includePass').checked = !!s.includePass;
+        $('#showDate').checked = !!s.showDate;
+        $('#includeWeather').checked = !!s.includeWeather;
+        $('#autoUpdate').checked = !!s.autoUpdate;
+        if (typeof s.updateEvery === 'number') $('#updateEvery').value = s.updateEvery;
+        if (s.ssStart) $('#ssStart').value = s.ssStart;
+        if (s.ssEnd)   $('#ssEnd').value   = s.ssEnd;
+        if (typeof s.brightness === 'number') { elBrightness.value = s.brightness; reflectBrightnessLabel(); }
+        if (s.line) $('#line').value = s.line;
+        if (s.direction) $('#direction').value = s.direction;
+        applySourceVisibility();
+      }catch(e){
+        applySourceVisibility();
+      }
+    }
+
+    // save settings (one shot)
+    elForm.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      $('#btnSave').disabled = true;
+      const data = {
+        source: elSource.value,
+        station: $('#station').value.trim(),
+        nrBoardType: (document.querySelector('input[name="nrBoardType"]:checked')||{}).value || 'arrivals',
+        callingAt: $('#callingAt').value.trim(),
+        includeBus: $('#includeBus').checked,
+        includePass: $('#includePass').checked,
+        showDate: $('#showDate').checked,
+        includeWeather: $('#includeWeather').checked,
+        autoUpdate: $('#autoUpdate').checked,
+        updateEvery: Number($('#updateEvery').value || 30),
+        ssStart: $('#ssStart').value || "23:00",
+        ssEnd: $('#ssEnd').value || "06:00",
+        brightness: Number(elBrightness.value),
+        // Underground
+        line: $('#line').value,
+        direction: $('#direction').value,
+      };
+      try{
+        await fetchJSON('/api/settings', { method:'POST', body: JSON.stringify(data) });
+        toast('Settings saved'); 
+      }catch(e){
+        toast('Save failed');
+      }finally{
+        $('#btnSave').disabled = false;
+      }
+    });
+
+    // Version info for side panel display
+    (async () => {
+      const el = document.getElementById('buildInfo');
+      if (!el) return;
+
+      try {
+        const res = await fetch('/api/version', { cache: 'no-store' });
+        if (!res.ok) throw new Error('bad status');
+
+        const ct = res.headers.get('content-type') || '';
+        let info;
+
+        if (ct.includes('application/json')) {
+          info = await res.json();
+        } else {
+          // Try text → JSON; fall back to treating it as the version string
+          const text = (await res.text()).trim();
+          try { info = JSON.parse(text); }
+          catch { info = { version: text }; }
+        }
+
+        const ver   = info.version || info.appVersion || info.versionName || '';
+        const build = info.build   || info.buildNumber || info.commit || info.sha || '';
+        const date  = info.date    || info.builtAt     || info.buildDate || '';
+
+        const parts = [];
+        if (ver)   parts.push('v' + ver);
+        if (build) parts.push('build ' + build);
+
+        el.textContent = parts.length ? parts.join(' • ') : 'Version unknown';
+      } catch {
+        // Optional last-ditch: use a compile-time global if you inject one
+        if (window.__BUILD__ && (window.__BUILD__.version || window.__BUILD__.build)) {
+          const b = window.__BUILD__;
+          el.textContent = [
+            b.version && ('v' + b.version),
+            b.build && ('build ' + b.build)
+          ].filter(Boolean).join(' • ');
+        } else {
+          el.textContent = 'Version unknown';
+        }
+      }
+    })();
+
+    // reload
+    $('#btnReload').addEventListener('click', loadSettings);
+
+    // Drawer logic
+    const drawer = $('#drawer'),
+          shade  = $('#shade'),
+          btnMenu = $('#btnMenu');
+
+    function openDrawer(){
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden','false');
+    }
+    function closeDrawer(){
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden','true');
+    }
+
+    btnMenu.addEventListener('click', openDrawer);
+    shade.addEventListener('click', closeDrawer);
+
+    const btnClose = document.getElementById('btnCloseDrawer');
+    if (btnClose) btnClose.addEventListener('click', closeDrawer);
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDrawer();
+    });
+
+    // Menu actions (stub endpoints for now)
+    $('#btnSwitch').addEventListener('click', ()=>{
+      closeDrawer();
+      setTimeout(()=> window.location.href = '/token.htm', 150); // small delay so drawer anim closes first
+    });
+    $('#btnCheckUpdates').addEventListener('click', async ()=>{
+      try{ await fetchJSON('/api/firmware/check', { method:'POST' }); toast('Checking…'); }catch(e){ toast('Check failed'); }
+      closeDrawer();
+    });
+    $('#btnRestart').addEventListener('click', async ()=>{
+      try{ await fetchJSON('/reboot', { method:'POST' }); toast('Restarting…'); }catch(e){ toast('Restart failed'); }
+      closeDrawer();
+    });
+    $('#btnResetWifi').addEventListener('click', async ()=>{
+      if (!confirm('Reset Wi-Fi settings?')) return;
+      try{ await fetchJSON('/api/reset-wifi', { method:'POST' }); toast('Wi-Fi reset requested'); }catch(e){ toast('Reset failed'); }
+      closeDrawer();
+    });
+    $('#btnResetAll').addEventListener('click', async ()=>{
+      if (!confirm('Factory reset? This clears all settings.')) return;
+      try{ await fetchJSON('/api/factory-reset', { method:'POST' }); toast('Resetting…'); }catch(e){ toast('Reset failed'); }
+      closeDrawer();
+    });
+    $('#btnSupport').addEventListener('click', ()=>{
+      closeDrawer();
+      // open a new mail draft
+      window.location.href = 'mailto:support@trakkr.uk?subject=TRAKKR Support';
+    });
+    $('#btnFAQ').addEventListener('click', ()=>{
+      closeDrawer();
+      window.open('https://www.trakkr.uk/faq', '_blank', 'noopener');
+    });
+    $('#btnRail').addEventListener('click', ()=>{
+      closeDrawer();
+      window.open('https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/Registration', '_blank', 'noopener');
+    });
+    $('#btnTfL').addEventListener('click', ()=>{
+      closeDrawer();
+      window.open('https://api-portal.tfl.gov.uk/signup', '_blank', 'noopener');
+    });
+    $('#btnWeather').addEventListener('click', ()=>{
+      closeDrawer();
+      window.open('https://home.openweathermap.org/users/sign_up', '_blank', 'noopener');
+    });
+
+    // init
+    reflectBrightnessLabel();
+    applySourceVisibility();
+    loadSettings();
+  </script>
+</body>
+</html>

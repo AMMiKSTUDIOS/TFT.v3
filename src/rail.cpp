@@ -11,7 +11,7 @@
 #include <HTTPClient.h>
 #include <vector>
 #include <time.h>
-
+#include "Global.h"
 #include "TFT.h"
 #include "NationalRail.h"
 
@@ -97,20 +97,16 @@ struct ScopeTimer { const char* n; uint32_t t0; ScopeTimer(const char* s):n(s),t
 // ===== CONFIG =====
 static const char* DARWIN_HOST = "lite.realtime.nationalrail.co.uk";
 static const char* DARWIN_PATH = "/OpenLDBWS/ldb9.asmx";
-static const char* DARWIN_TOKEN= "9a6c3c95-ca8e-411f-8d5b-f32564d0928d";
 
 static const char* SOAP12_NS   = "http://www.w3.org/2003/05/soap-envelope";
 static const char* LDB_NS      = "http://thalesgroup.com/RTTI/2016-02-16/ldb/";
 static const char* TOK_NS      = "http://thalesgroup.com/RTTI/2013-11-28/Token/types";
 
 // [TRAKKR] Switch to arrivals mode as requested
-static const char* MODE = "departures";     // "arrivals" or "departures"
-static const char* CRS  = "WAT";            // Three-letter station code
 static const int   ROWS = 8;                // Number of rows to show (max 16, limited by screen height)
 static const int   TIME_WINDOW_MINS = 120;  // Look for services within this many minutes of now
 static const uint32_t POLL_MS_OK  = 30000;  // 30s between successful polls
 static const uint32_t POLL_MS_ERR = 2000;   // 2s between failed polls/
-static const uint32_t TICKER_MS   = 7000;   // 7s between ticker updates
 
 static const bool   DEBUG_NET       = true;
 static const bool   DEBUG_BODY_SNIP = false;
@@ -292,7 +288,7 @@ static void setTitle(const String& station){
   const int clearH = HEADER_H - 2;
   tft.fillRect(clearX, clearY, clearW, clearH, headBg());
 
-  String want = station + String(" ") + (MODE[0]=='a' ? "Arrivals" : "Departures");
+  String want = station + String(" ") + (Cfg::mode()[0]=='a' ? "Arrivals" : "Departures");
   const int maxPx = ((stopX - PAD - 6) > 20) ? (stopX - PAD - 6) : 20;
 
   // [TRAKKR] Title also uses pixel/word fit for consistency
@@ -320,6 +316,7 @@ static String normalizeOper(String op){
   if (op == "Great Western Railway")          return "Great Western";
   if (op == "West Midlands Trains")           return "West Midlands";
   if (op == "South Western Railway")          return "South Western";
+  if (op == "East Midlands Railway")          return "East Midlands";
   return op;
 }
 
@@ -640,11 +637,11 @@ static bool postSoapOnce(String& outBody, int& outCode, const char* method, cons
           " xmlns:typ=\""; soap+=TOK_NS; soap+="\""
           " xmlns:ldb=\""; soap+=LDB_NS; soap+="\">"
           "<soap:Header><typ:AccessToken><typ:TokenValue>";
-  soap += DARWIN_TOKEN;
+  soap += Cfg::darwinToken();
   soap += "</typ:TokenValue></typ:AccessToken></soap:Header>"
           "<soap:Body><ldb:"; soap+=reqTag; soap+=">"
           "<ldb:numRows>"; soap+=String(ROWS); soap+="</ldb:numRows>"
-          "<ldb:crs>"; soap+=CRS; soap+="</ldb:crs>"
+          "<ldb:crs>"; soap+=Cfg::crs(); soap+="</ldb:crs>"
           "<ldb:timeOffset>0</ldb:timeOffset>"
           "<ldb:timeWindow>"; soap+=String(TIME_WINDOW_MINS); soap+="</ldb:timeWindow>"
           "</ldb:"; soap+=reqTag; soap+=">"
@@ -662,7 +659,7 @@ static bool postSoapOnce(String& outBody, int& outCode, const char* method, cons
 
   if (DEBUG_NET){
     Serial.println("\n===== Darwin POST =====");
-    Serial.printf("Method: %s  CRS:%s  Rows:%d\n", method, CRS, ROWS);
+    Serial.printf("Method: %s  Cfg::crs():%s  Rows:%d\n", method, Cfg::crs(), ROWS);
   }
 
   outCode=http.POST((uint8_t*)soap.c_str(), soap.length());
@@ -687,7 +684,7 @@ static bool fetchDarwinBoard(){
   services.clear();
   nrccMsgs.clear();
 
-  const bool dep = (MODE[0] != 'a');
+  const bool dep = (Cfg::mode()[0] != 'a');
   const char* method = dep ? "GetDepartureBoard"        : "GetArrivalBoard";
   const char* reqTag = dep ? "GetDepartureBoardRequest" : "GetArrivalBoardRequest";
 
@@ -708,7 +705,7 @@ static bool fetchDarwinBoard(){
 
     String loc = get1ns(body, "locationName");
     htmlDecode(loc);                      // [TRAKKR] fix &amp; etc
-    stationTitle = loc.length() ? loc : String(CRS);
+    stationTitle = loc.length() ? loc : String(Cfg::crs());
 
     String ts = get1ns(body, "trainServices");
     if (ts.length()){

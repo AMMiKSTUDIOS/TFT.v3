@@ -6,6 +6,7 @@
 // https://www.ammikstudios.com
 
 #include <Arduino.h>
+#include "Global.h"
 #include "TFT.h"
 #include <FS.h>
 #include <LittleFS.h>
@@ -14,6 +15,7 @@
 #include "fonts_compat.h"
 #include <WiFi.h>
 #include <time.h>
+#include "HttpServer.h"
 
 extern void rail_setup();
 extern void rail_loop();
@@ -22,9 +24,7 @@ extern void rail_loop();
 static const int SCREEN_W = 480;
 static const int SCREEN_H = 320;
 
-// Wi-Fi and Time credentials
-static const char* WIFI_SSID = "alterra";                 //  SSID of your Wi-Fi network
-static const char* WIFI_PASS = "Hewer035!!";              //  Wi-Fi password
+// Time config
 static const char* NTP_1 = "pool.ntp.org";                //  Primary NTP server
 static const char* NTP_2 = "time.nist.gov";               //  Secondary NTP server
 static const char* TZ_UK = "GMT0BST,M3.5.0/1,M10.5.0/2";  //  UK timezone with BST rules
@@ -41,7 +41,7 @@ static inline uint16_t bodyBgMain() {
 void ensureWiFi() {
   if (WiFi.status() == WL_CONNECTED) return;
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(Cfg::wifiSsid(), Cfg::wifiPass());
   uint32_t t0 = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000) {
     delay(200);
@@ -82,15 +82,12 @@ static void renderJPEG(int xpos, int ypos) {
 
 // Decode and draw a JPG from LittleFS at (x,y)
 static bool drawJpgFile(const char *path, int x, int y) {
-  // basic sanity: exist + not tiny
   File f = LittleFS.open(path, "r");
   if (!f) { Serial.printf("[TRAKKR] File not found: %s\n", path); return false; }
   size_t sz = f.size(); f.close();
   if (sz < 1024) { Serial.printf("[TRAKKR] File too small (%u bytes): %s\n", (unsigned)sz, path); return false; }
 
-  // IMPORTANT: JPEGDecoder outputs RGB565 in big-endian.
-  // ILI9488 (TFT_eSPI) expects little-endian unless swapBytes is enabled.
-  // Enable byte swap for correct colours (prevents the orange/pink cast).
+  // [TRAKKR-NOTE] JPEGDecoder outputs big-endian RGB565; enable swap for TFT_eSPI.
   tft.setSwapBytes(true);
 
   if (!JpegDec.decodeFsFile(path)) {
@@ -103,7 +100,6 @@ static bool drawJpgFile(const char *path, int x, int y) {
   renderJPEG(x, y);
   tft.endWrite();
 
-  // reset (optional)
   tft.setSwapBytes(false);
   return true;
 }
@@ -134,7 +130,7 @@ static void splashWifiConnect(uint32_t timeoutMs = 15000) {
   showSplash(lines0, 2, 0);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(Cfg::wifiSsid(), Cfg::wifiPass());
 
   uint32_t t0 = millis();
   uint8_t dots = 0;
@@ -207,7 +203,7 @@ static void splashTimeSync(uint32_t timeoutMs = 15000) {
     strftime(buf, sizeof(buf), "%d %b %Y %H:%M", &lt);
     String msg = String("Time: ") + buf;
     const char* ok[2] = { "Clock set", msg.c_str() };
-    showSplash(ok, 2, 2000);  // <-- pause after showing time
+    showSplash(ok, 2, 2000);
     Serial.printf("[TRAKKR] Clock set to %s\n", buf);
   } else {
     const char* fail[2] = { "Time sync failed", "Will retry later" };
@@ -216,14 +212,15 @@ static void splashTimeSync(uint32_t timeoutMs = 15000) {
   }
 }
 
-//
 // -----------------------------------------------------------------------------
 // Main application entry points
 // -----------------------------------------------------------------------------
-//
 
 void setup() {
   Serial.begin(115200);
+
+  // [TRAKKR] Load NVS-backed config (Wi-Fi, CRS, mode, tokens, etc.)
+  Cfg::begin();
 
   // ---- Init display ----
   tft.init();
@@ -253,7 +250,7 @@ void setup() {
   const char* scr1[] = { "Welcome to TRAKKR", "from AMMiKSTUDIOS" };
   showSplash(scr1, 2, 3000);
 
-  const char* scr2[] = { "Powered by National Rail, TfL Open Data", "and Underground Weather" };
+  const char* scr2[] = { "Powered by National Rail, TfL Open Data", "and OpenWeather" };
   showSplash(scr2, 2, 3000);
 
   const char* scr3[] = { "Copyright (c)2025 AMMiKSTUDIOS:", "All Rights Reserved" };
@@ -275,9 +272,11 @@ void setup() {
   tft.fillScreen(bodyBgMain());
 
   // ---- Hand-off to main app ----
+  http_setup();
   rail_setup();
 }
 
 void loop() {
+  http_loop();
   rail_loop();
 }
