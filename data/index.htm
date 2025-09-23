@@ -6,163 +6,163 @@
   <title>TRAKKR • Control Panel</title>
   <meta name="color-scheme" content="light dark" />
 
-<style>
-  :root{
-    /* Dark is the default; light overrides live below */
-    --bg: #0b0d10;
-    --panel: #14181d;
-    --text: #e7edf3;
-    --muted:#9aa7b2;
-    --accent:#2aa8ff;
-    --ok:#2ecc71;
-    --warn:#ffb020;
-    --danger:#ff5d5d;
-    --radius:14px;
-    --gap:14px;
-    --maxw: 920px;
-    --border:#ffffff1f;
-    --elev:#00000033;
-    --elev2:#00000066;
-    --btnghost:#ffffff22;
-    --switchTrack:#ffffff1a;
-    --shade:#0008;
-  }
-  [data-theme="light"]{
-    --bg:#f5f7fb;
-    --panel:#ffffff;
-    --text:#0d1117;
-    --muted:#546270;
-    --accent:#0077ff;
-    --border:#0000001a;
-    --elev:#0000001a;
-    --elev2:#00000033;
-    --btnghost:#00000010;
-    --switchTrack:#0000001a;
-    --shade:#0006;
-  }
+  <style>
+    :root{
+      /* Dark is the default; light overrides live below */
+      --bg: #0b0d10;
+      --panel: #14181d;
+      --text: #e7edf3;
+      --muted:#9aa7b2;
+      --accent:#2aa8ff;
+      --ok:#2ecc71;
+      --warn:#ffb020;
+      --danger:#ff5d5d;
+      --radius:14px;
+      --gap:14px;
+      --maxw: 920px;
+      --border:#ffffff1f;
+      --elev:#00000033;
+      --elev2:#00000066;
+      --btnghost:#ffffff22;
+      --switchTrack:#ffffff1a;
+      --shade:#0008;
+    }
+    [data-theme="light"]{
+      --bg:#f5f7fb;
+      --panel:#ffffff;
+      --text:#0d1117;
+      --muted:#546270;
+      --accent:#0077ff;
+      --border:#0000001a;
+      --elev:#0000001a;
+      --elev2:#00000033;
+      --btnghost:#00000010;
+      --switchTrack:#0000001a;
+      --shade:#0006;
+    }
 
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    display:flex; flex-direction:column; align-items:center;
-  }
-  header{
-    width:100%; display:flex; align-items:center; justify-content:center;
-    position:sticky; top:0; background:transparent; padding:10px 12px; z-index:5;
-  }
-  .bar{
-    width:100%; max-width:var(--maxw); display:flex; align-items:center; gap:10px;
-  }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      display:flex; flex-direction:column; align-items:center;
+    }
+    header{
+      width:100%; display:flex; align-items:center; justify-content:center;
+      position:sticky; top:0; background:transparent; padding:10px 12px; z-index:5;
+    }
+    .bar{
+      width:100%; max-width:var(--maxw); display:flex; align-items:center; gap:10px;
+    }
 
-  /* Buttons */
-  .hamburger,
-  .theme-toggle{
-    width:40px; height:40px;
-    border-radius:10px;
-    border:1px solid #0000;
-    background:var(--panel);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    outline:none;
-    box-shadow:0 10px 30px var(--elev);
-    padding:0;
-    line-height:0;
-  }
-  .hamburger:focus-visible,
-  .theme-toggle:focus-visible{ box-shadow:0 0 0 2px var(--accent); }
-  .hamburger span{ display:block; width:18px; height:2px; background:var(--text); position:relative; }
-  .hamburger span::before,
-  .hamburger span::after{ content:""; position:absolute; left:0; right:0; height:2px; background:var(--text); }
-  .hamburger span::before{ top:-6px }
-  .hamburger span::after{  top: 6px }
+    /* Buttons */
+    .hamburger,
+    .theme-toggle{
+      width:40px; height:40px;
+      border-radius:10px;
+      border:1px solid #0000;
+      background:var(--panel);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      outline:none;
+      box-shadow:0 10px 30px var(--elev);
+      padding:0;
+      line-height:0;
+    }
+    .hamburger:focus-visible,
+    .theme-toggle:focus-visible{ box-shadow:0 0 0 2px var(--accent); }
+    .hamburger span{ display:block; width:18px; height:2px; background:var(--text); position:relative; }
+    .hamburger span::before,
+    .hamburger span::after{ content:""; position:absolute; left:0; right:0; height:2px; background:var(--text); }
+    .hamburger span::before{ top:-6px }
+    .hamburger span::after{  top: 6px }
 
-  .title{ font-weight:700; margin-left:6px }
-  .spacer{ flex:1 }
+    .title{ font-weight:700; margin-left:6px }
+    .spacer{ flex:1 }
 
-  .theme-toggle{ font-size:16px; color:var(--text); border:1px solid var(--border); }
-  .theme-toggle .icon{ font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; }
-  .theme-toggle .label{ display:none }
+    .theme-toggle{ font-size:16px; color:var(--text); border:1px solid var(--border); }
+    .theme-toggle .icon{ font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; }
+    .theme-toggle .label{ display:none }
 
-  main{ width:100%; display:flex; justify-content:center; padding:10px 12px 40px; }
-  .card{
-    width:100%; max-width:var(--maxw); background:var(--panel);
-    border-radius:var(--radius); padding:16px; box-shadow:0 10px 30px var(--elev);
-    border:1px solid var(--border);
-  }
-  form{ display:grid; gap:var(--gap) }
-  fieldset{ border:1px solid var(--border); border-radius:12px; padding:12px; }
-  legend{ padding:0 6px; color:var(--muted); font-weight:600; font-size:12px }
-  .row{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
-  .row-3{ grid-template-columns:1fr 1fr 1fr; }
-  .row-4{ grid-template-columns:repeat(4,1fr) }
-  @media (max-width:800px){ .row,.row-3,.row-4{ grid-template-columns:1fr } }
-  label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px }
-  input[type="text"], select, input[type="time"], input[type="number"]{
-    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
-    background:#0000; color:var(--text);
-  }
-  .switch{ display:flex; align-items:center; gap:10px }
-  .switch input{
-    width:42px; height:22px; appearance:none; background:var(--switchTrack);
-    border-radius:999px; position:relative; outline:none; cursor:pointer; transition:.2s;
-  }
-  .switch input:checked{ background:var(--accent) }
-  .switch input::after{
-    content:""; position:absolute; top:3px; left:3px; width:16px; height:16px;
-    border-radius:50%; background:#fff; transition:.2s transform;
-  }
-  .switch input:checked::after{ transform:translateX(20px) }
-  .hint{ color:var(--muted); font-size:12px }
-  .actions{ display:flex; gap:10px; justify-content:flex-end; }
-  button{
-    appearance:none; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
-    background:var(--accent); color:#fff; font-weight:700;
-    box-shadow:0 10px 30px var(--elev);
-  }
-  button[disabled]{ opacity:.6; cursor:default }
-  .ghost{ background:var(--btnghost); color:var(--text) }
-  .ok{ background:var(--ok) }
-  .danger{ background:var(--danger) }
-  .divider{ height:1px; background:var(--border); margin:6px 0 }
+    main{ width:100%; display:flex; justify-content:center; padding:10px 12px 40px; }
+    .card{
+      width:100%; max-width:var(--maxw); background:var(--panel);
+      border-radius:var(--radius); padding:16px; box-shadow:0 10px 30px var(--elev);
+      border:1px solid var(--border);
+    }
+    form{ display:grid; gap:var(--gap) }
+    fieldset{ border:1px solid var(--border); border-radius:12px; padding:12px; }
+    legend{ padding:0 6px; color:var(--muted); font-weight:600; font-size:12px }
+    .row{ display:grid; gap:10px; grid-template-columns:1fr 1fr; }
+    .row-3{ grid-template-columns:1fr 1fr 1fr; }
+    .row-4{ grid-template-columns:repeat(4,1fr) }
+    @media (max-width:800px){ .row,.row-3,.row-4{ grid-template-columns:1fr } }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px }
+    input[type="text"], select, input[type="time"], input[type="number"]{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+      background:#0000; color:var(--text);
+    }
+    .switch{ display:flex; align-items:center; gap:10px }
+    .switch input{
+      width:42px; height:22px; appearance:none; background:var(--switchTrack);
+      border-radius:999px; position:relative; outline:none; cursor:pointer; transition:.2s;
+    }
+    .switch input:checked{ background:var(--accent) }
+    .switch input::after{
+      content:""; position:absolute; top:3px; left:3px; width:16px; height:16px;
+      border-radius:50%; background:#fff; transition:.2s transform;
+    }
+    .switch input:checked::after{ transform:translateX(20px) }
+    .hint{ color:var(--muted); font-size:12px }
+    .actions{ display:flex; gap:10px; justify-content:flex-end; }
+    button{
+      appearance:none; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+      background:var(--accent); color:#fff; font-weight:700;
+      box-shadow:0 10px 30px var(--elev);
+    }
+    button[disabled]{ opacity:.6; cursor:default }
+    .ghost{ background:var(--btnghost); color:var(--text) }
+    .ok{ background:var(--ok) }
+    .danger{ background:var(--danger) }
+    .divider{ height:1px; background:var(--border); margin:6px 0 }
 
-  /* Drawer */
-  .drawer { position:fixed; inset:0; display:none; z-index:1000; }
-  .drawer.open{ display:block }
-  .drawer .shade{ position:absolute; inset:0; background:#0008; z-index:0; }
-  .drawer .panel{
-    position:absolute; top:0; left:0; bottom:0; width:min(84vw,340px);
-    background:#14181d; color:#e7edf3; padding:14px;
-    box-shadow:0 10px 30px #00000066; border-right:1px solid #ffffff1a;
-    z-index:1; display:flex; flex-direction:column;
-  }
-  .drawer .panel .menu{ flex:1; overflow:auto; }
-  .panel-footer{
-    margin-top:auto; padding-top:10px; border-top:1px solid #ffffff1a;
-    color:#9aa7b2; font-size:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;
-  }
-  .panel-footer .mono{
-    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    opacity:.9;
-  }
-  .menu h3{ margin:8px 0 12px; font-size:14px; color:#9aa7b2 }
-  .menu .btn{
-    width:100%; text-align:left; background:#ffffff12; color:#e7edf3;
-    margin-bottom:10px; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
-  }
-  .menu .btn.danger{ background:#ff5d5d; color:#fff }
-  .close-btn { position:absolute; top:10px; right:10px; background:none; border:0; font-size:22px; color:#e7edf3; cursor:pointer; }
-  .close-btn:hover, .close-btn:focus { color:var(--accent); }
+    /* Drawer */
+    .drawer { position:fixed; inset:0; display:none; z-index:1000; }
+    .drawer.open{ display:block }
+    .drawer .shade{ position:absolute; inset:0; background:#0008; z-index:0; }
+    .drawer .panel{
+      position:absolute; top:0; left:0; bottom:0; width:min(84vw,340px);
+      background:#14181d; color:#e7edf3; padding:14px;
+      box-shadow:0 10px 30px #00000066; border-right:1px solid #ffffff1a;
+      z-index:1; display:flex; flex-direction:column;
+    }
+    .drawer .panel .menu{ flex:1; overflow:auto; }
+    .panel-footer{
+      margin-top:auto; padding-top:10px; border-top:1px solid #ffffff1a;
+      color:#9aa7b2; font-size:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;
+    }
+    .panel-footer .mono{
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      opacity:.9;
+    }
+    .menu h3{ margin:8px 0 12px; font-size:14px; color:#9aa7b2 }
+    .menu .btn{
+      width:100%; text-align:left; background:#ffffff12; color:#e7edf3;
+      margin-bottom:10px; border:0; border-radius:12px; padding:10px 14px; cursor:pointer;
+    }
+    .menu .btn.danger{ background:#ff5d5d; color:#fff }
+    .close-btn { position:absolute; top:10px; right:10px; background:none; border:0; font-size:22px; color:#e7edf3; cursor:pointer; }
+    .close-btn:hover, .close-btn:focus { color:var(--accent); }
 
-  /* Toast */
-  .toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; background:#000d; color:#fff; padding:10px 14px; border-radius:12px; opacity:0; pointer-events:none; transition:.25s; }
-  .toast.show{ opacity:1 }
+    /* Toast */
+    .toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; background:#000d; color:#fff; padding:10px 14px; border-radius:12px; opacity:0; pointer-events:none; transition:.25s; }
+    .toast.show{ opacity:1 }
 
-  .center-header{ flex:1; display:flex; justify-content:center; gap:6px }
-</style>
+    .center-header{ flex:1; display:flex; justify-content:center; gap:6px }
+  </style>
 
   <!-- Theme loader (runs early; toggler uses its API) -->
   <script src="theme.js" defer></script>
@@ -184,149 +184,35 @@
       <form id="form">
         <!-- Data Source -->
         <fieldset>
-          <legend>Data Source X</legend>
-
-          <!-- NR only -->
-          <div id="selectTransportMode" class="row" aria-live="polite">
-            <div>
-              <label>Mode</label>
-              <div class="row">
-                <label class="switch"><input type="radio" name="selectMode" value="NR" checked /> <span>NR</span></label>
-                <label class="switch"><input type="radio" name="selectMode" value="TFL" /> <span>TFL</span></label>
-              </div>
-            </div>
-          </div>
-
+          <legend>Data Source</legend>
           <div class="row">
             <div>
-              <label for="source">Source</label>
-              <select id="source" name="source" required>
-                <option value="national-rail">National Rail</option>
-                <option value="underground">London Underground</option>
-              </select>
-              <div class="hint">Choose the network to display.</div>
+              <label>Board Mode</label>
+              <div class="row-4" id="boardMode" aria-live="polite">
+                <label class="switch"><input type="radio" name="source" value="national-rail" checked /> <span>National Rail</span></label>
+                <label class="switch"><input type="radio" name="source" value="underground" /> <span>London Underground</span></label>
+                <!--label class="switch"><input type="radio" name="source" value="bus" /> <span>Bus Services</span></label>
+                <label class="switch"><input type="radio" name="source" value="tram" /> <span>Tram Services</span></label-->
+              </div>
             </div>
-
+        </fieldset>
+        <fieldset>
+          <legend>Station</legend>
+          <div class="row">
             <div>
-              <label for="station">Station</label>
               <input id="station" name="station_display" type="text"
                      placeholder="e.g., London Waterloo / WAT"
                      autocomplete="off" list="stations-list">
               <datalist id="stations-list"></datalist>
               <input type="hidden" id="station_crs" name="station_crs">
-              <div class="hint"><span id="stationsMeta">Stations: loading…</span> Start typing a station name or CRS.</div>
+              <div class="hint"><span id="stationsMeta">Stations: loading…</span></div>
             </div>
-
-                  <script>
-                    // ---- Path to your JSON ----
-                    const STATIONS_URL = '/stations.min.json';
-
-                    // Elements
-                    const stationInput  = document.getElementById('station');
-                    const stationHidden = document.getElementById('station_crs');
-                    const stationList   = document.getElementById('stations-list');
-                    const stationsMeta  = document.getElementById('stationsMeta');
-
-                    // State
-                    let STATIONS = [];                 // [{stationName, crsCode}]
-                    const byCrs = new Map();           // CRS -> Name
-                    const displayOf = (name, crs) => `${name} (${crs})`;
-
-                    // Load stations (single URL, no fallback)
-                    async function loadStations(){
-                      stationsMeta.textContent = 'Loading stations…';
-                      try{
-                        const r = await fetch(STATIONS_URL, { cache:'no-store' });
-                        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-                        const ct = (r.headers.get('content-type') || '').toLowerCase();
-                        const raw = ct.includes('application/json') ? await r.json() : JSON.parse(await r.text());
-
-                        STATIONS = raw.map(x => ({
-                          stationName: x.stationName || x.name,
-                          crsCode: String(x.crsCode || x.crs || '').toUpperCase()
-                        })).filter(s => s.stationName && /^[A-Z]{3}$/.test(s.crsCode));
-
-                        if (!STATIONS.length) throw new Error('No valid stations in JSON');
-
-                        byCrs.clear();
-                        STATIONS.forEach(s => byCrs.set(s.crsCode, s.stationName));
-
-                        renderStations();
-                        stationsMeta.textContent = `Stations loaded: ~${STATIONS.length}. Start typing a station name or CRS.`;
-                      }catch(err){
-                        stationsMeta.textContent = `Stations failed to load (${err.message}).`;
-                        console.error('Stations load error:', err);
-                      }
-                    }
-
-                    // Build datalist with BOTH "Name (CRS)" and "CRS" for native prefix matching
-                    function renderStations(){
-                      stationList.innerHTML = '';
-                      const frag = document.createDocumentFragment();
-                      for (const s of STATIONS){
-                        const a = document.createElement('option'); // Name (CRS)
-                        a.value = displayOf(s.stationName, s.crsCode);
-                        a.dataset.crs = s.crsCode;
-                        frag.appendChild(a);
-
-                        const b = document.createElement('option'); // CRS
-                        b.value = s.crsCode;
-                        b.dataset.crs = s.crsCode;
-                        frag.appendChild(b);
-                      }
-                      stationList.appendChild(frag);
-                    }
-
-                    // Normalise UI to "Name (CRS)" and set hidden CRS
-                    function setFromCRS(crs){
-                      const code = String(crs||'').toUpperCase();
-                      const name = byCrs.get(code);
-                      if (!name) return false;
-                      stationInput.value  = displayOf(name, code);
-                      stationHidden.value = code;
-                      return true;
-                    }
-
-                    // Resolve what the user typed/selected
-                    function syncFromInput(){
-                      const v = stationInput.value.trim();
-
-                      // Exact option match (either "Name (CRS)" or "CRS")
-                      const opt = Array.from(stationList.options).find(o => o.value === v);
-                      if (opt?.dataset?.crs){ setFromCRS(opt.dataset.crs); return; }
-
-                      // "Name (CRS)" typed manually
-                      const m = v.match(/\(([A-Za-z]{3})\)\s*$/);
-                      if (m && setFromCRS(m[1])) return;
-
-                      // Bare CRS typed (case-insensitive)
-                      if (/^[A-Za-z]{3}$/.test(v)) { setFromCRS(v); return; }
-
-                      // Unknown/incomplete
-                      stationHidden.value = '';
-                    }
-
-                    // UX: clear on focus; restore previous if untouched
-                    stationInput.addEventListener('focus', e => {
-                      const i = e.target;
-                      i.dataset.old = i.value;
-                      i.value = '';
-                      i.dataset.changed = '';
-                    });
-                    stationInput.addEventListener('input', e => { e.target.dataset.changed = '1'; });
-                    stationInput.addEventListener('change', syncFromInput);
-                    stationInput.addEventListener('blur', e => {
-                      syncFromInput();
-                      const i = e.target;
-                      if (!i.dataset.changed){ i.value = i.dataset.old || ''; }
-                      delete i.dataset.changed; delete i.dataset.old;
-                    });
-                  </script>
+          </div>
 
           <!-- NR only -->
           <div id="nrOnly" class="row" aria-live="polite">
             <div>
-              <label>Board Type (NR)</label>
+              <label>&nbsp;</label>
               <div class="row">
                 <label class="switch"><input type="radio" name="nrBoardType" value="arrivals" checked /> <span>Arrivals</span></label>
                 <label class="switch"><input type="radio" name="nrBoardType" value="departures" /> <span>Departures</span></label>
@@ -365,23 +251,23 @@
 
         <!-- Filters -->
         <fieldset>
-          <legend>Filters</legend>
+          <legend>National Rail Options</legend>
           <div class="row-3">
             <div>
-              <label for="callingAt">Only trains calling at</label>
+              <label for="callingAt">Only show trains calling at</label>
               <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
-              <div class="hint">Optional CRS or station name. (Can become multi-select later.)</div>
+              <div class="hint"><br>&nbsp;</div>
             </div>
             <div>
               <label class="switch">
                 <input id="includeBus" name="includeBus" type="checkbox" />
-                <span>Include bus replacements</span>
+                <span>Include bus replacement services</span>
               </label>
             </div>
             <div>
               <label class="switch">
                 <input id="includePass" name="includePass" type="checkbox" />
-                <span>Include ‘passing through’ trains</span>
+                <span>Include passing through trains</span>
               </label>
             </div>
           </div>
@@ -472,17 +358,20 @@
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
 
+  <!-- ONE canonical script for everything -->
   <script>
     /* ---------- tiny helpers ---------- */
     const $ = s => document.querySelector(s);
-    const show = (el, v=true) => { el.hidden = !v; };
-    const toast = (msg, ms=1400) => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); };
+    const show = (el, v=true) => { if (el) el.hidden = !v; };
+    const toast = (msg, ms=1400) => { const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); };
     const debounce = (fn, ms=250) => { let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a), ms); }; };
     const fetchJSON = async (url, opts={}) => {
       const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), 8000);
-      try { const r = await fetch(url, { ...opts, headers:{'Content-Type':'application/json', ...(opts.headers||{})}, signal:ctrl.signal });
-            if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
-            const ct = r.headers.get('content-type')||""; return ct.includes('application/json') ? r.json() : r.text();
+      try {
+        const r = await fetch(url, { ...opts, headers:{'Content-Type':'application/json', ...(opts.headers||{})}, signal:ctrl.signal });
+        if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
+        const ct = r.headers.get('content-type')||"";
+        return ct.includes('application/json') ? r.json() : r.text();
       } finally { clearTimeout(t); }
     };
 
@@ -492,100 +381,189 @@
     function setTheme(mode){ if (window.__trakkrTheme?.set) { window.__trakkrTheme.set(mode); } else { document.documentElement.setAttribute('data-theme', mode); } reflectThemeIcon(); }
     function toggleTheme(){ setTheme(getTheme()==='dark'?'light':'dark'); }
     function reflectThemeIcon(){ const t=getTheme(); btnTheme.querySelector('.icon').textContent = (t==='light')?'🌙':'☀️'; btnTheme.title=`Switch to ${t==='light'?'dark':'light'} mode`; }
-    btnTheme.addEventListener('click', toggleTheme);
+    btnTheme?.addEventListener('click', toggleTheme);
     window.addEventListener('trakkr-theme-changed', reflectThemeIcon);
     reflectThemeIcon();
 
     /* ---------- elements ---------- */
     const elForm = $('#form');
-    const elSource = $('#source');
     const elNrOnly = $('#nrOnly');
     const elTubeOnly = $('#tubeOnly');
     const elWeatherWrap = $('#weatherWrap');
     const elBrightness = $('#brightness');
     const elBrightnessVal = $('#brightnessVal');
 
+    /* ---------- Board Mode (radios) ---------- */
+    const sourceRadios = [...document.querySelectorAll('input[name="source"]')];
+    const sourceValues = new Set(sourceRadios.map(r => r.value));
+    const getSourceValue = () => sourceRadios.find(r => r.checked)?.value || null;
+    const setSourceValue = (v) => {
+      const current = getSourceValue() || 'national-rail';
+      const next = sourceValues.has(v) ? v : current; // never unset if saved value is unknown
+      sourceRadios.forEach(r => r.checked = (r.value === next));
+    };
     function applySourceVisibility(){
-      const isNR = elSource.value === 'national-rail';
-      show(elNrOnly, isNR); show(elWeatherWrap, isNR); show(elTubeOnly, !isNR);
+      const isNR = getSourceValue() === 'national-rail';
+      show(elNrOnly, isNR);
+      show(elWeatherWrap, isNR);
+      show(elTubeOnly, !isNR);
     }
-    elSource.addEventListener('change', applySourceVisibility);
+    if (!getSourceValue()) setSourceValue('national-rail');
+    sourceRadios.forEach(r => r.addEventListener('change', applySourceVisibility));
 
-    function reflectBrightnessLabel(){ elBrightnessVal.textContent = String(elBrightness.value); }
+    /* ---------- brightness ---------- */
+    function reflectBrightnessLabel(){ if (elBrightnessVal && elBrightness) elBrightnessVal.textContent = String(elBrightness.value); }
     const pushBrightness = debounce(async (val)=>{
       try{ await fetchJSON('/api/brightness', { method:'POST', body: JSON.stringify({ value:Number(val) }) }); }
       catch{ toast('Brightness save failed'); }
     }, 300);
-    elBrightness.addEventListener('input', e=>{ reflectBrightnessLabel(); pushBrightness(e.target.value); });
+    elBrightness?.addEventListener('input', e=>{ reflectBrightnessLabel(); pushBrightness(e.target.value); });
+
+    /* ---------- Station picker (single source of truth) ---------- */
+    const STATIONS_URL = '/stations.min.json'; // file sits at FS root
+    const stationInput  = document.getElementById('station');
+    const stationHidden = document.getElementById('station_crs');
+    const stationList   = document.getElementById('stations-list');
+    const stationsMeta  = document.getElementById('stationsMeta');
+
+    let STATIONS = [];                 // [{stationName, crsCode}]
+    const byCrs = new Map();           // CRS -> Name
+    const displayOf = (name, crs) => `${name} (${crs})`;
+    const PENDING = { crs: null };     // apply after list loads, if needed
+
+    async function loadStations(){
+      if (stationsMeta) stationsMeta.textContent = 'Stations: loading…';
+      const r = await fetch(STATIONS_URL, { cache:'no-store' });
+      if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+      const ct = (r.headers.get('content-type')||'').toLowerCase();
+      const raw = ct.includes('application/json') ? await r.json() : JSON.parse(await r.text());
+
+      STATIONS = raw.map(x => ({
+        stationName: x.stationName || x.name,
+        crsCode: String(x.crsCode || x.crs || '').toUpperCase()
+      })).filter(s => s.stationName && /^[A-Z]{3}$/.test(s.crsCode));
+
+      byCrs.clear();
+      STATIONS.forEach(s => byCrs.set(s.crsCode, s.stationName));
+
+      // build datalist: both "Name (CRS)" and "CRS"
+      stationList.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (const s of STATIONS){
+        const a = document.createElement('option'); a.value = displayOf(s.stationName, s.crsCode); a.dataset.crs = s.crsCode; frag.appendChild(a);
+        const b = document.createElement('option'); b.value = s.crsCode;                           b.dataset.crs = s.crsCode; frag.appendChild(b);
+      }
+      stationList.appendChild(frag);
+      if (stationsMeta) stationsMeta.textContent = `${STATIONS.length} stations loaded. Enter a station name or CRS code`;
+
+      // if we loaded settings before stations, apply pending CRS now
+      if (PENDING.crs) { setFromCRS(PENDING.crs); PENDING.crs = null; }
+    }
+
+    function setFromCRS(crs){
+      const code = String(crs||'').toUpperCase();
+      const name = byCrs.get(code);
+      if (!name) return false;
+      if (stationInput) stationInput.value  = displayOf(name, code);
+      if (stationHidden) stationHidden.value = code;
+      return true;
+    }
+
+    function syncFromInput(){
+      const v = (stationInput?.value || '').trim();
+      // exact option match
+      const opt = Array.from(stationList.options).find(o => o.value === v);
+      if (opt?.dataset?.crs){ setFromCRS(opt.dataset.crs); return; }
+      // "Name (CRS)"
+      const m = v.match(/\(([A-Za-z]{3})\)\s*$/);
+      if (m && setFromCRS(m[1])) return;
+      // bare CRS
+      if (/^[A-Za-z]{3}$/.test(v)) { setFromCRS(v); return; }
+      if (stationHidden) stationHidden.value = '';
+    }
+
+    // input UX
+    stationInput?.addEventListener('focus', e => { const i=e.target; i.dataset.old=i.value; i.value=''; i.dataset.changed=''; });
+    stationInput?.addEventListener('input', e => { e.target.dataset.changed='1'; });
+    stationInput?.addEventListener('change', syncFromInput);
+    stationInput?.addEventListener('blur', e => {
+      syncFromInput();
+      const i=e.target; if(!i.dataset.changed) i.value=i.dataset.old || '';
+      delete i.dataset.changed; delete i.dataset.old;
+    });
 
     /* ---------- settings load/save ---------- */
     async function loadSettings(){
-      try{
-        const s = await fetchJSON('/api/settings', { method:'GET' });
+      let s = {};
+      try { s = await fetchJSON('/api/settings', { method:'GET' }); } catch {}
 
-        if (s.source) elSource.value = s.source;
-        if (typeof s.brightness === 'number'){ elBrightness.value = s.brightness; reflectBrightnessLabel(); }
+      // Source: apply saved if valid; never unset existing selection
+      const savedSource = s?.source ?? s?.src ?? s?.mode ?? null;
+      if (savedSource && sourceValues.has(savedSource)) setSourceValue(savedSource);
+      applySourceVisibility();
 
-        // Station: prefer stored CRS and render as "Name (CRS)"
-        const savedCrs = s.station_crs || s.station || s.crs || '';  // accept legacy "station"
+      // Brightness
+      if (typeof s?.brightness === 'number'){ elBrightness.value = s.brightness; reflectBrightnessLabel(); }
+
+      // Station (prefer CRS; keep display fallback)
+      const savedCrs = (s?.station_crs ?? s?.station ?? s?.crs ?? '').toUpperCase();
+      if (savedCrs){
         if (!setFromCRS(savedCrs)){
-          // fallback: if a display string was stored, keep it but try to derive CRS
-          if (s.station_display) stationInput.value = s.station_display;
-          else if (s.station) stationInput.value = s.station; // legacy
-          syncFromInput();
+          // stations not loaded yet; remember to apply later
+          PENDING.crs = savedCrs;
         }
-
-        if (s.nrBoardType){
-          const r = document.querySelector(`input[name="nrBoardType"][value="${s.nrBoardType}"]`);
-          if (r) r.checked = true;
-        }
-        if (s.callingAt) $('#callingAt').value = s.callingAt;
-        $('#includeBus').checked  = !!s.includeBus;
-        $('#includePass').checked = !!s.includePass;
-        $('#showDate').checked = !!s.showDate;
-        $('#includeWeather').checked = !!s.includeWeather;
-        $('#autoUpdate').checked = !!s.autoUpdate;
-        if (typeof s.updateEvery === 'number') $('#updateEvery').value = s.updateEvery;
-        if (s.ssStart) $('#ssStart').value = s.ssStart;
-        if (s.ssEnd)   $('#ssEnd').value   = s.ssEnd;
-        if (s.line) $('#line').value = s.line;
-        if (s.direction) $('#direction').value = s.direction;
-
-        applySourceVisibility();
-      }catch{
-        applySourceVisibility();
+      } else if (s?.station_display){
+        stationInput.value = s.station_display;
+        syncFromInput();
       }
+
+      // Other bits
+      if (s?.nrBoardType){
+        const r = document.querySelector(`input[name="nrBoardType"][value="${s.nrBoardType}"]`);
+        if (r) r.checked = true;
+      }
+      if (s?.callingAt) $('#callingAt').value = s.callingAt;
+      $('#includeBus').checked     = !!s?.includeBus;
+      $('#includePass').checked    = !!s?.includePass;
+      $('#showDate').checked       = !!s?.showDate;
+      $('#includeWeather').checked = !!s?.includeWeather;
+      $('#autoUpdate').checked     = !!s?.autoUpdate;
+      if (typeof s?.updateEvery === 'number') $('#updateEvery').value = s.updateEvery;
+      if (s?.ssStart) $('#ssStart').value = s.ssStart;
+      if (s?.ssEnd)   $('#ssEnd').value   = s.ssEnd;
+      if (s?.line) $('#line').value = s.line;
+      if (s?.direction) $('#direction').value = s.direction;
     }
 
-    elForm.addEventListener('submit', async (ev)=>{
+    elForm?.addEventListener('submit', async (ev)=>{
       ev.preventDefault();
-      $('#btnSave').disabled = true;
+      const btn = document.getElementById('btnSave');
+      if (btn) btn.disabled = true;
 
-      // Ensure hidden CRS is in sync before save
       syncFromInput();
-      const code = (stationHidden.value || '').toUpperCase();
-      const display = stationInput.value.trim();
+      const code = (stationHidden?.value || '').toUpperCase();
+      const display = (stationInput?.value || '').trim();
 
       const data = {
-        // keep both for backward/forward compatibility
-        station: code,                // <- legacy/firmware expects this
-        station_crs: code,            // <- new key you introduced
+        // keep both for FW compatibility
+        station: code,
+        station_crs: code,
         station_display: display,
 
-        source: elSource.value,
+        source: getSourceValue() || 'national-rail',
         nrBoardType: (document.querySelector('input[name="nrBoardType"]:checked')||{}).value || 'arrivals',
-        callingAt: $('#callingAt').value.trim(),
-        includeBus: $('#includeBus').checked,
-        includePass: $('#includePass').checked,
-        showDate: $('#showDate').checked,
-        includeWeather: $('#includeWeather').checked,
-        autoUpdate: $('#autoUpdate').checked,
-        updateEvery: Number($('#updateEvery').value || 30),
-        ssStart: $('#ssStart').value || "23:00",
-        ssEnd: $('#ssEnd').value || "06:00",
-        brightness: Number(elBrightness.value),
-        line: $('#line').value,
-        direction: $('#direction').value,
+        callingAt: ($('#callingAt')?.value || '').trim(),
+        includeBus: $('#includeBus')?.checked || false,
+        includePass: $('#includePass')?.checked || false,
+        showDate: $('#showDate')?.checked || false,
+        includeWeather: $('#includeWeather')?.checked || false,
+        autoUpdate: $('#autoUpdate')?.checked || false,
+        updateEvery: Number($('#updateEvery')?.value || 30),
+        ssStart: $('#ssStart')?.value || "23:00",
+        ssEnd: $('#ssEnd')?.value || "06:00",
+        brightness: Number(elBrightness?.value || 180),
+        line: $('#line')?.value || '',
+        direction: $('#direction')?.value || '',
       };
 
       try{
@@ -594,10 +572,9 @@
       }catch{
         toast('Save failed');
       }finally{
-        $('#btnSave').disabled = false;
+        if (btn) btn.disabled = false;
       }
     });
-
 
     // Version info for side panel
     (async () => {
@@ -624,30 +601,36 @@
       }
     })();
 
-    // Reload, drawer, and menu links
-    $('#btnReload').addEventListener('click', loadSettings);
+    /* ---------- Drawer + misc actions ---------- */
+    $('#btnReload')?.addEventListener('click', ()=>{ loadSettings(); });
     const drawer = $('#drawer'), shade = $('#shade'), btnMenu = $('#btnMenu');
     const openDrawer = () => { drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); };
     const closeDrawer = () => { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); };
-    btnMenu.addEventListener('click', openDrawer);
-    shade.addEventListener('click', closeDrawer);
+    btnMenu?.addEventListener('click', openDrawer);
+    shade?.addEventListener('click', closeDrawer);
     const btnClose = document.getElementById('btnCloseDrawer'); if (btnClose) btnClose.addEventListener('click', closeDrawer);
     window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
-    $('#btnSwitch').addEventListener('click', ()=>{ closeDrawer(); setTimeout(()=> location.href='/token.htm', 150); });
-    $('#btnCheckUpdates').addEventListener('click', async ()=>{ try{ await fetchJSON('/api/firmware/check', { method:'POST' }); toast('Checking…'); }catch{ toast('Check failed'); } closeDrawer(); });
-    $('#btnRestart').addEventListener('click', async ()=>{ try{ await fetchJSON('/reboot', { method:'POST' }); toast('Restarting…'); }catch{ toast('Restart failed'); } closeDrawer(); });
-    $('#btnResetWifi').addEventListener('click', async ()=>{ if (!confirm('Reset Wi-Fi settings?')) return; try{ await fetchJSON('/api/reset-wifi', { method:'POST' }); toast('Wi-Fi reset requested'); }catch{ toast('Reset failed'); } closeDrawer(); });
-    $('#btnResetAll').addEventListener('click', async ()=>{ if (!confirm('Factory reset? This clears all settings.')) return; try{ await fetchJSON('/api/factory-reset', { method:'POST' }); toast('Resetting…'); }catch{ toast('Reset failed'); } closeDrawer(); });
-    $('#btnSupport').addEventListener('click', ()=>{ closeDrawer(); location.href='mailto:support@trakkr.uk?subject=TRAKKR Support'; });
-    $('#btnFAQ').addEventListener('click', ()=>{ closeDrawer(); window.open('https://www.trakkr.uk/faq','_blank','noopener'); });
-    $('#btnRail').addEventListener('click', ()=>{ closeDrawer(); window.open('https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/Registration','_blank','noopener'); });
-    $('#btnTfL').addEventListener('click', ()=>{ closeDrawer(); window.open('https://api-portal.tfl.gov.uk/signup','_blank','noopener'); });
-    $('#btnWeather').addEventListener('click', ()=>{ closeDrawer(); window.open('https://home.openweathermap.org/users/sign_up','_blank','noopener'); });
+    $('#btnSwitch')?.addEventListener('click', ()=>{ closeDrawer(); setTimeout(()=> location.href='/token.htm', 150); });
+    $('#btnCheckUpdates')?.addEventListener('click', async ()=>{ try{ await fetchJSON('/api/firmware/check', { method:'POST' }); toast('Checking…'); }catch{ toast('Check failed'); } closeDrawer(); });
+    $('#btnRestart')?.addEventListener('click', async ()=>{ try{ await fetchJSON('/reboot', { method:'POST' }); toast('Restarting…'); }catch{ toast('Restart failed'); } closeDrawer(); });
+    $('#btnResetWifi')?.addEventListener('click', async ()=>{ if (!confirm('Reset Wi-Fi settings?')) return; try{ await fetchJSON('/api/reset-wifi', { method:'POST' }); toast('Wi-Fi reset requested'); }catch{ toast('Reset failed'); } closeDrawer(); });
+    $('#btnResetAll')?.addEventListener('click', async ()=>{ if (!confirm('Factory reset? This clears all settings.')) return; try{ await fetchJSON('/api/factory-reset', { method:'POST' }); toast('Resetting…'); }catch{ toast('Reset failed'); } closeDrawer(); });
+    $('#btnSupport')?.addEventListener('click', ()=>{ closeDrawer(); location.href='mailto:support@trakkr.uk?subject=TRAKKR Support'; });
+    $('#btnFAQ')?.addEventListener('click', ()=>{ closeDrawer(); window.open('https://www.trakkr.uk/faq','_blank','noopener'); });
+    $('#btnRail')?.addEventListener('click', ()=>{ closeDrawer(); window.open('https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/Registration','_blank','noopener'); });
+    $('#btnTfL')?.addEventListener('click', ()=>{ closeDrawer(); window.open('https://api-portal.tfl.gov.uk/signup','_blank','noopener'); });
+    $('#btnWeather')?.addEventListener('click', ()=>{ closeDrawer(); window.open('https://home.openweathermap.org/users/sign_up','_blank','noopener'); });
 
-    // Boot
+    /* ---------- Boot ---------- */
     reflectBrightnessLabel();
+    if (!getSourceValue()) setSourceValue('national-rail');
     applySourceVisibility();
-    loadStations().then(loadSettings); // ensure CRS->Name available before rendering stored value
+
+    // restore settings ASAP, then load stations; pending CRS is applied after stations arrive
+    (async ()=>{
+      await loadSettings();
+      try { await loadStations(); } catch(e){ if (stationsMeta) stationsMeta.textContent = 'Stations failed to load'; console.error(e); }
+    })();
   </script>
 </body>
 </html>
