@@ -105,7 +105,7 @@ static const char* TOK_NS      = "http://thalesgroup.com/RTTI/2013-11-28/Token/t
 
 // [TRAKKR] Switch to arrivals mode as requested
 static const char* MODE = "departures";     // "arrivals" or "departures"
-static const char* CRS  = "STP";            // Three-letter station code
+static const char* CRS  = "WAT";            // Three-letter station code
 static const int   ROWS = 8;                // Number of rows to show (max 16, limited by screen height)
 static const int   TIME_WINDOW_MINS = 120;  // Look for services within this many minutes of now
 static const uint32_t POLL_MS_OK  = 30000;  // 30s between successful polls
@@ -151,6 +151,48 @@ static uint16_t badCol()   { return tft.color565(0xff,0x5d,0x5d); }
 
 // ===== UTILS =====
 static String ellipsize(const String& s, int m){ if((int)s.length()<=m) return s; if(m<=1) return "…"; return s.substring(0,m-1)+"…"; }
+
+// [TRAKKR] HTML entity decoder for a small, common subset (&amp;, &nbsp;, &lt;, &gt;, &quot;, &apos;)
+static void htmlDecode(String& s){
+  s.replace("&nbsp;", " ");
+  s.replace("&amp;",  "&");
+  s.replace("&lt;",   "<");
+  s.replace("&gt;",   ">");
+  s.replace("&quot;", "\"");
+  s.replace("&apos;", "'");
+}
+
+// [TRAKKR] Pixel-aware, word-safe truncation: drops WHOLE trailing words, adds "…"
+static String fitByWordsPx(const String& in, int maxPx){
+  if (maxPx <= 0) return String("");
+  String work = in;
+  work.trim();
+  if (tft.textWidth(work) <= maxPx) return work;
+
+  // If a single long word, fall back to character-based trim
+  if (work.indexOf(' ') < 0){
+    String tmp = work;
+    while (tmp.length() > 1 && tft.textWidth(tmp + "…") > maxPx) tmp.remove(tmp.length()-1);
+    return (tmp.length() < work.length()) ? (tmp + "…") : tmp;
+  }
+
+  // Drop trailing words until it fits (keep at least first word)
+  String out = work;
+  while (true){
+    int lastSpace = out.lastIndexOf(' ');
+    if (lastSpace <= 0) break;                  // nothing else to drop
+    String candidate = out.substring(0, lastSpace);
+    candidate.trim();
+    String withDots = candidate + "…";
+    if (tft.textWidth(withDots) <= maxPx) return withDots;
+    out = candidate;                            // drop another word and try again
+  }
+
+  // Safety: if still too wide, revert to char-based
+  String tmp = out;
+  while (tmp.length() > 1 && tft.textWidth(tmp + "…") > maxPx) tmp.remove(tmp.length()-1);
+  return (tmp.length() < out.length()) ? (tmp + "…") : tmp;
+}
 
 // [TRAKKR] Keep only the first sentence of an NRCC message.
 static String keepFirstSentence(const String& in){
@@ -253,10 +295,8 @@ static void setTitle(const String& station){
   String want = station + String(" ") + (MODE[0]=='a' ? "Arrivals" : "Departures");
   const int maxPx = ((stopX - PAD - 6) > 20) ? (stopX - PAD - 6) : 20;
 
-  String out = want;
-  while (out.length() && tft.textWidth(out + "…") > maxPx) out.remove(out.length()-1);
-  if (out.length() && out != want) out += "…";
-
+  // [TRAKKR] Title also uses pixel/word fit for consistency
+  String out = fitByWordsPx(want, maxPx);
   drawShadowed(out, PAD, yTop, TFT_WHITE, TL_DATUM);
 }
 
@@ -276,8 +316,10 @@ static void drawColHeader(){
 static String normalizeOper(String op){
   op.trim();
   if (op == "London North Eastern Railway")   return "LNER";
+  if (op == "London Northwestern Railway")    return "London Northwestern";
   if (op == "Great Western Railway")          return "Great Western";
   if (op == "West Midlands Trains")           return "West Midlands";
+  if (op == "South Western Railway")          return "South Western";
   return op;
 }
 
@@ -314,6 +356,9 @@ static void drawRows() {
   const int maxVis  = min(ROWS, availH / _rowH);
   const int painted = min((int)services.size(), maxVis);
 
+  // [TRAKKR] Compute pixel width for each column span
+  const int pxToMax = (X_ETD - X_TO) - 6;   // small gutter before ETA
+
   for (int i = 0; i < painted; i++) {
     const auto& s = services[i];
     uint16_t bg   = (i % 2 == 0) ? bodyBg() : rowAlt();
@@ -323,7 +368,10 @@ static void drawRows() {
     int by = ROW_TOP + i*_rowH + _rowH/2;
 
     drawShadowed(ellipsize(s.time,  CH_TIME),  X_STD,  by, TFT_YELLOW, ML_DATUM);
-    drawShadowed(ellipsize(s.place, CH_TO),    X_TO,   by, TFT_WHITE,  ML_DATUM);
+
+    // [TRAKKR] Word-safe pixel ellipsis for "From" column
+    String fromFit = fitByWordsPx(s.place, pxToMax);
+    drawShadowed(fromFit, X_TO, by, TFT_WHITE, ML_DATUM);
 
     String low = s.est; low.toLowerCase();
     uint16_t c = TFT_WHITE;
@@ -659,6 +707,7 @@ static bool fetchDarwinBoard(){
     ScopeTimer Tparse("parse XML");
 
     String loc = get1ns(body, "locationName");
+    htmlDecode(loc);                      // [TRAKKR] fix &amp; etc
     stationTitle = loc.length() ? loc : String(CRS);
 
     String ts = get1ns(body, "trainServices");
@@ -676,6 +725,12 @@ static bool fetchDarwinBoard(){
         String endBlk = get1ns(svc, dep ? "destination" : "origin");
         String first  = get1ns(endBlk, "location");
         v.place = get1ns(first, "locationName");
+
+        // [TRAKKR] Decode common HTML entities everywhere they might appear
+        htmlDecode(v.place);
+        htmlDecode(v.oper);
+        htmlDecode(v.plat);
+        htmlDecode(v.est);
 
         String stype   = get1ns(svc, "serviceType");   stype.toLowerCase();
         String isBus   = get1ns(svc, "isBus");         isBus.toLowerCase();
@@ -712,7 +767,7 @@ static bool fetchDarwinBoard(){
 
         for (;;){
           int lt = txt.indexOf('<'); if (lt < 0) break;
-        int gt = txt.indexOf('>', lt + 1);
+          int gt = txt.indexOf('>', lt + 1);
           if (gt < 0){ txt.remove(lt); break; }
           txt.remove(lt, gt - lt + 1);
         }
