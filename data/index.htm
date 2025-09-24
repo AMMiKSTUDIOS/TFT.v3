@@ -189,8 +189,7 @@
           <legend>Data Source</legend>
           <div class="row">
             <div>
-              <label>Board Mode</label>
-              <div class="row-4" id="boardMode" aria-live="polite">
+              <div class="row" id="boardMode" aria-live="polite">
                 <label class="switch"><input type="radio" name="source" value="national-rail" checked /> <span>National Rail</span></label>
                 <label class="switch"><input type="radio" name="source" value="underground" /> <span>London Underground</span></label>
                 <!--label class="switch"><input type="radio" name="source" value="bus" /> <span>Bus Services</span></label>
@@ -218,7 +217,7 @@
                   <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
                   <div class="hint">&nbsp;</div>
                 </div>
-                <div class="row-3">
+                <div class="row">
                   <label class="switch"><input type="radio" name="nrBoardType" value="arrivals" checked /> <span>Arrivals</span></label>
                   <label class="switch"><input type="radio" name="nrBoardType" value="departures" /> <span>Departures</span></label>
                 </div>
@@ -288,9 +287,10 @@
           </div>
           <div class="row">
             <div>
-              <label for="updateEvery">Update interval (seconds)</label>
-              <input id="updateEvery" name="updateEvery" type="number" min="5" step="5" value="30" />
-              <div class="hint">Used if automatic updates are enabled.</div>
+              <label for="updateEvery">&nbsp;</label>
+              <div class="hint">Refresh onscreen data every <span id="updateEveryVal">30</span> seconds</div>
+              <input id="updateEvery" name="updateEvery" type="range" min="15" max="60" step="5" value="30" />
+              
             </div>
             <div class="row">
               <div>
@@ -301,14 +301,6 @@
                 <label for="ssEnd">Screensaver end</label>
                 <input id="ssEnd" name="ssEnd" type="time" value="06:00" />
               </div>
-            </div>
-          </div>
-          <div class="divider"></div>
-          <div class="row">
-            <div>
-              <label for="brightness">Screen brightness</label>
-              <input id="brightness" name="brightness" type="range" min="1" max="255" value="180" />
-              <div class="hint" id="brightnessVal">180</div>
             </div>
           </div>
         </fieldset>
@@ -354,13 +346,26 @@
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite">Saved.</div>
 
-  <!-- ONE canonical script for everything -->
+
+<!-------------------------------------------------------------------------------------
+
+  JavaScript: all in one file for simplicity and caching
+  - Helpers ($, show, toast, fetchJSON)
+  - Theme toggle (uses theme.js API if available)
+  - Elements        
+  - Board Mode (radios)
+  - Station picker (single source of truth)
+  - Settings load/save     
+
+-------------------------------------------------------------------------------------->
+
+
   <script>
     /* ---------- tiny helpers ---------- */
+
     const $ = s => document.querySelector(s);
     const show = (el, v=true) => { if (el) el.hidden = !v; };
     const toast = (msg, ms=1400) => { const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); };
-    const debounce = (fn, ms=250) => { let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a), ms); }; };
     const fetchJSON = async (url, opts={}) => {
       const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), 8000);
       try {
@@ -372,6 +377,7 @@
     };
 
     /* ---------- theme toggle ---------- */
+
     const btnTheme = $('#btnTheme');
     function getTheme(){ return (window.__trakkrTheme?.get?.() ?? document.documentElement.getAttribute('data-theme') ?? 'dark'); }
     function setTheme(mode){ if (window.__trakkrTheme?.set) { window.__trakkrTheme.set(mode); } else { document.documentElement.setAttribute('data-theme', mode); } reflectThemeIcon(); }
@@ -382,15 +388,25 @@
     reflectThemeIcon();
 
     /* ---------- elements ---------- */
+
     const elForm = $('#form');
     const elNrOnly = $('#nrOnly');
     const elTubeOnly = $('#tubeOnly');
     const elWeatherWrap = $('#weatherWrap');
-    const elBrightness = $('#brightness');
-    const elBrightnessVal = $('#brightnessVal'); 
+    const elUpdateEvery    = $('#updateEvery');
+    const elUpdateEveryVal = $('#updateEveryVal');
+
+    function reflectUpdateEveryLabel(){
+      if (!elUpdateEvery || !elUpdateEveryVal) return;
+      elUpdateEveryVal.textContent = String(elUpdateEvery.value);
+    }
+
+    // live preview while sliding
+    elUpdateEvery?.addEventListener('input', reflectUpdateEveryLabel);
 
 
     /* ---------- Board Mode (radios) ---------- */
+
     const sourceRadios   = Array.from(document.querySelectorAll('input[name="source"]'));
     const sourceValues   = new Set(sourceRadios.map(r => r.value));
     const getSourceValue = () => sourceRadios.find(r => r.checked)?.value || null;
@@ -428,17 +444,8 @@
     });
 
 
-
-
-    /* ---------- brightness ---------- */
-    function reflectBrightnessLabel(){ if (elBrightnessVal && elBrightness) elBrightnessVal.textContent = String(elBrightness.value); }
-    const pushBrightness = debounce(async (val)=>{
-      try{ await fetchJSON('/api/brightness', { method:'POST', body: JSON.stringify({ value:Number(val) }) }); }
-      catch{ toast('Brightness save failed'); }
-    }, 300);
-    elBrightness?.addEventListener('input', e=>{ reflectBrightnessLabel(); pushBrightness(e.target.value); });
-
     /* ---------- Station picker (single source of truth) ---------- */
+
     const STATIONS_URL = '/stations.min.json'; // file sits at FS root
     const stationInput  = document.getElementById('station');
     const stationHidden = document.getElementById('station_crs');
@@ -512,6 +519,7 @@
     });
 
     /* ---------- settings load/save ---------- */
+
     async function loadSettings(){
       let s = {};
       try { s = await fetchJSON('/api/settings', { method:'GET' }); } catch {}
@@ -521,9 +529,6 @@
       if (savedSource) setSourceValue(savedSource); else setSourceValue('national-rail');
 
       applySourceVisibility();
-
-      // Brightness
-      if (typeof s?.brightness === 'number'){ elBrightness.value = s.brightness; reflectBrightnessLabel(); }
 
       // Station (prefer CRS; keep display fallback)
       const savedCrs = (s?.station_crs ?? s?.station ?? s?.crs ?? '').toUpperCase();
@@ -548,7 +553,15 @@
       $('#showDate').checked       = !!s?.showDate;
       $('#includeWeather').checked = !!s?.includeWeather;
       $('#autoUpdate').checked     = !!s?.autoUpdate;
-      if (typeof s?.updateEvery === 'number') $('#updateEvery').value = s.updateEvery;
+      // Update interval (slider)
+        if (typeof s?.updateEvery === 'number') {
+          const v = Math.min(60, Math.max(15, s.updateEvery|0)); // clamp to slider range
+          elUpdateEvery.value = v;
+        } else {
+          elUpdateEvery.value = 30; // default
+        }
+        reflectUpdateEveryLabel(); // keep the hint in sync
+
       if (s?.ssStart) $('#ssStart').value = s.ssStart;
       if (s?.ssEnd)   $('#ssEnd').value   = s.ssEnd;
       if (s?.line) $('#line').value = s.line;
@@ -578,10 +591,9 @@
         showDate: $('#showDate')?.checked || false,
         includeWeather: $('#includeWeather')?.checked || false,
         autoUpdate: $('#autoUpdate')?.checked || false,
-        updateEvery: Number($('#updateEvery')?.value || 30),
+        updateEvery: Number(elUpdateEvery?.value || 30),
         ssStart: $('#ssStart')?.value || "23:00",
         ssEnd: $('#ssEnd')?.value || "06:00",
-        brightness: Number(elBrightness?.value || 180),
         line: $('#line')?.value || '',
         direction: $('#direction')?.value || '',
       };
@@ -597,6 +609,7 @@
     });
 
     // Version info for side panel
+    
     (async () => {
       const el = document.getElementById('buildInfo');
       if (!el) return;
@@ -642,7 +655,9 @@
     $('#btnWeather')?.addEventListener('click', ()=>{ closeDrawer(); window.open('https://home.openweathermap.org/users/sign_up','_blank','noopener'); });
 
     /* ---------- Boot ---------- */
-    reflectBrightnessLabel();
+
+    reflectUpdateEveryLabel();
+
     if (!getSourceValue()) setSourceValue('national-rail');
     applySourceVisibility();
 
