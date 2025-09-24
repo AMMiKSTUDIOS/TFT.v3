@@ -167,9 +167,9 @@ static bool timeIsValid() {
 
 // [TRAKKR] Ensure time is set via NTP; safe to call repeatedly
 void ensureTime() {
-  if (timeIsValid()) return;
-  configTime(0, 0, NTP_1, NTP_2);     // use NTP servers
-  setenv("TZ", TZ_UK, 1); tzset();    // apply local timezone
+  setenv("TZ", TZ_UK, 1); tzset();      // always set UK rules
+  if (timeIsValid()) return;            // but avoid unnecessary NTP
+  configTime(0, 0, NTP_1, NTP_2);
 }
 
 // [TRAKKR] Animated "Setting clock…" splash with success/fail outcome

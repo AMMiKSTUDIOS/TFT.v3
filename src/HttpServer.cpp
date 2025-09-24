@@ -6,11 +6,12 @@
 #include <ESPmDNS.h>
 #include "Api.h"       // your API glue (adds /api/* routes)
 
-// ADD THESE STATICS (near the top of this file, after server is declared is fine):
+//
+// [TRAKKR] Reboot scheduling (used by /api/settings and /reboot)
+//
 static volatile bool     sRebootPending = false;
 static uint32_t          sRebootAtMs    = 0;
 
-// ADD THIS FUNCTION IMPLEMENTATION (anywhere in this file, outside other funcs):
 void scheduleReboot(uint32_t delayMs){
   sRebootPending = true;
   sRebootAtMs    = millis() + (delayMs ? delayMs : 1);
@@ -20,7 +21,6 @@ void scheduleReboot(uint32_t delayMs){
 static WebServer server(80);
 
 // ---- Minimal static file server (LittleFS) ----
-// REPLACE the whole contentType() with this version
 static String contentType(const String& path){
   if (path.endsWith(".htm")  || path.endsWith(".html")) return "text/html";
   if (path.endsWith(".css"))  return "text/css";
@@ -36,7 +36,6 @@ static String contentType(const String& path){
   if (path.endsWith(".txt"))  return "text/plain";
   return "application/octet-stream";
 }
-
 
 static bool tryServeFile(const String& path){
   if (!LittleFS.exists(path)) return false;
@@ -60,6 +59,13 @@ void http_setup(){
   });
   server.on("/token", HTTP_GET, [](){
     if (!tryServeFile("/token.htm")) server.send(404, "text/plain", "token.htm not found");
+  });
+
+  // --- NEW: explicit reboot endpoint for the UI ---
+  server.on("/reboot", HTTP_POST, [](){
+    // [TRAKKR] Respond first so the browser sees success, then reboot shortly after
+    server.send(200, "application/json", "{\"status\":\"rebooting\"}");
+    scheduleReboot(200);
   });
 
   // Generic static loader (so /app.js, /styles.css, images, etc. work)

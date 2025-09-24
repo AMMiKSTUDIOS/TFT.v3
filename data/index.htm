@@ -212,52 +212,61 @@
             </div>
         </fieldset>
         <fieldset>
-          <legend>Station</legend>
-          <div class="row">
-            <div>
-              <input id="station" name="station_display" type="text"
-                     placeholder="e.g., London Waterloo / WAT"
-                     autocomplete="off" list="stations-list">
-              <datalist id="stations-list"></datalist>
-              <input type="hidden" id="station_crs" name="station_crs">
-            </div>
-          </div>
 
-          <!-- NR only -->
-          <div id="nrOnly" class="row" aria-live="polite" hidden>
-            <div>
+          <legend>Station</legend>
+          
+          <!-- National Rail only -->
+
+              <div id="nrOnly" class="row" aria-live="polite" hidden>
                 <div>
-                  <label for="callingAt">&nbsp;<br>Only show trains calling at</label>
+                  <input id="station" name="station_display" type="text"
+                        placeholder="e.g., London Waterloo / WAT"
+                        autocomplete="off" list="stations-list">
+                  <datalist id="stations-list"></datalist>
+                  <input type="hidden" id="station_crs" name="station_crs">
+                  <div class="hint">&nbsp;</div>
+                  <label for="callingAt">Only show trains calling at</label>
                   <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
                   <div class="hint">&nbsp;</div>
+                  <div class="row">
+                    <label class="switch">
+                      <input type="radio" name="nrBoardType" value="arrivals" checked />
+                      <span>Arrivals</span>
+                    </label>
+                    <label class="switch">
+                      <input type="radio" name="nrBoardType" value="departures" />
+                      <span>Departures</span>
+                    </label>
+                  </div>
                 </div>
-                <div class="row">
-                  <label class="switch"><input type="radio" name="nrBoardType" value="arrivals" checked /> <span>Arrivals</span></label>
-                  <label class="switch"><input type="radio" name="nrBoardType" value="departures" /> <span>Departures</span></label>
-                </div>
-                <label>&nbsp;</label>
+                <div class="hint">&nbsp;</div>
                 <div>
                   <label class="switch">
                     <input id="includeBus" name="includeBus" type="checkbox" />
                     <span>Include bus replacement services</span>
                   </label>
-                </div>
-                <div>
                   <label class="switch">
                     <input id="includePass" name="includePass" type="checkbox" />
                     <span>Include passing through trains</span>
                   </label>
-                </div>
-                 <div class="switch" id="weatherWrap">
-                  <input id="includeWeather" name="includeWeather" type="checkbox" />
-                  <label for="includeWeather">Include local weather (NR only)</label>
-                </div>
-               
-            </div>
-          </div>
+                  <label class="switch">
+                    <input id="includeWeather" name="includeWeather" type="checkbox" />
+                    <span>Include local weather</span>
+                  </label>
+                </div>       
+              </div>
 
-          <!-- Underground only -->
-          <div id="tubeOnly" hidden>
+
+          <!-- Tube only -->
+
+          <div id="tubeOnly" class="row" aria-live="polite" hidden>
+            <div>
+              <input id="tube" name="tube_display" type="text"
+                     placeholder="e.g., Baker Street"
+                     autocomplete="off" list="tfl-list">
+              <datalist id="tfl-list"></datalist>
+              <input type="hidden" id="station_tube" name="station_tube">
+              <div class="hint">&nbsp;</div>
             <div class="row">
               <div>
                 <label for="line">Underground Line</label>
@@ -283,6 +292,8 @@
               </div>
             </div>
           </div>
+
+          
         </fieldset>
 
         <!-- Extras -->
@@ -378,6 +389,10 @@
     /* ---------- tiny helpers ---------- */
 
     const $ = s => document.querySelector(s);
+      // [TRAKKR] Source value mapping between UI and firmware
+    const toWire = v => (v === 'underground' ? 'tube' : (v === 'national-rail' ? 'rail' : v));
+    const toUi   = v => (v === 'tube' ? 'underground' : (v === 'rail' ? 'national-rail' : v));
+
     const show = (el, v=true) => { if (el) el.hidden = !v; };
     const toast = (msg, ms=1400) => { const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); };
     const fetchJSON = async (url, opts={}) => {
@@ -433,7 +448,10 @@
 
     const sourceRadios   = Array.from(document.querySelectorAll('input[name="source"]'));
     const sourceValues   = new Set(sourceRadios.map(r => r.value));
-    const getSourceValue = () => sourceRadios.find(r => r.checked)?.value || null;
+    const getSourceValue = () => {
+      const ui = sourceRadios.find(r => r.checked)?.value || null;
+      return ui; // return UI label; use toWire() when sending to firmware
+    };
 
     // Hide/show AND disable/enable the inputs inside each section
     function toggleGroup(el, on){
@@ -444,17 +462,18 @@
 
     function applySourceVisibility(){
       const mode = getSourceValue();
-      const isNR = mode === 'national-rail';
+      const isNR = (mode === 'national-rail');          // UI value
       toggleGroup(elNrOnly,      isNR);
       toggleGroup(elWeatherWrap, isNR);
       toggleGroup(elTubeOnly,   !isNR);
     }
 
     function setSourceValue(v){
+      const ui = toUi(v);                                 // accept 'rail'/'tube' too
       const fallback = 'national-rail';
-      const next = sourceValues.has(v) ? v : (getSourceValue() || fallback);
+      const next = sourceValues.has(ui) ? ui : (getSourceValue() || fallback);
       sourceRadios.forEach(r => { r.checked = (r.value === next); });
-      applySourceVisibility(); // IMPORTANT: reflect immediately
+      applySourceVisibility();
     }
 
     // Ensure a valid default before any async work runs
@@ -607,7 +626,7 @@
         station_crs: code,
         station_display: display,
 
-        source: getSourceValue() || 'national-rail',
+        source: toWire(getSourceValue()) || 'rail',
         nrBoardType: (document.querySelector('input[name="nrBoardType"]:checked')||{}).value || 'arrivals',
         callingAt: ($('#callingAt')?.value || '').trim(),
         includeBus: $('#includeBus')?.checked || false,
