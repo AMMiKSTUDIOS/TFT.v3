@@ -162,6 +162,8 @@
     .toast.show{ opacity:1 }
 
     .center-header{ flex:1; display:flex; justify-content:center; gap:6px }
+
+    [hidden]{ display:none !important; }
   </style>
 
   <!-- Theme loader (runs early; toggler uses its API) -->
@@ -205,18 +207,39 @@
                      autocomplete="off" list="stations-list">
               <datalist id="stations-list"></datalist>
               <input type="hidden" id="station_crs" name="station_crs">
-              <div class="hint"><span id="stationsMeta">Stations: loading…</span></div>
             </div>
           </div>
 
           <!-- NR only -->
-          <div id="nrOnly" class="row" aria-live="polite">
+          <div id="nrOnly" class="row" aria-live="polite" hidden>
             <div>
-              <label>&nbsp;</label>
-              <div class="row">
-                <label class="switch"><input type="radio" name="nrBoardType" value="arrivals" checked /> <span>Arrivals</span></label>
-                <label class="switch"><input type="radio" name="nrBoardType" value="departures" /> <span>Departures</span></label>
-              </div>
+                <div>
+                  <label for="callingAt">&nbsp;<br>Only show trains calling at</label>
+                  <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
+                  <div class="hint">&nbsp;</div>
+                </div>
+                <div class="row-3">
+                  <label class="switch"><input type="radio" name="nrBoardType" value="arrivals" checked /> <span>Arrivals</span></label>
+                  <label class="switch"><input type="radio" name="nrBoardType" value="departures" /> <span>Departures</span></label>
+                </div>
+                <label>&nbsp;</label>
+                <div>
+                  <label class="switch">
+                    <input id="includeBus" name="includeBus" type="checkbox" />
+                    <span>Include bus replacement services</span>
+                  </label>
+                </div>
+                <div>
+                  <label class="switch">
+                    <input id="includePass" name="includePass" type="checkbox" />
+                    <span>Include passing through trains</span>
+                  </label>
+                </div>
+                 <div class="switch" id="weatherWrap">
+                  <input id="includeWeather" name="includeWeather" type="checkbox" />
+                  <label for="includeWeather">Include local weather (NR only)</label>
+                </div>
+               
             </div>
           </div>
 
@@ -249,30 +272,6 @@
           </div>
         </fieldset>
 
-        <!-- Filters -->
-        <fieldset>
-          <legend>National Rail Options</legend>
-          <div class="row-3">
-            <div>
-              <label for="callingAt">Only show trains calling at</label>
-              <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
-              <div class="hint"><br>&nbsp;</div>
-            </div>
-            <div>
-              <label class="switch">
-                <input id="includeBus" name="includeBus" type="checkbox" />
-                <span>Include bus replacement services</span>
-              </label>
-            </div>
-            <div>
-              <label class="switch">
-                <input id="includePass" name="includePass" type="checkbox" />
-                <span>Include passing through trains</span>
-              </label>
-            </div>
-          </div>
-        </fieldset>
-
         <!-- Extras -->
         <fieldset>
           <legend>Extras</legend>
@@ -281,10 +280,7 @@
               <input id="showDate" name="showDate" type="checkbox" />
               <label for="showDate">Show current date</label>
             </div>
-            <div class="switch" id="weatherWrap">
-              <input id="includeWeather" name="includeWeather" type="checkbox" />
-              <label for="includeWeather">Include local weather (NR only)</label>
-            </div>
+
             <div class="switch">
               <input id="autoUpdate" name="autoUpdate" type="checkbox" />
               <label for="autoUpdate">Enable automatic updates</label>
@@ -391,25 +387,48 @@
     const elTubeOnly = $('#tubeOnly');
     const elWeatherWrap = $('#weatherWrap');
     const elBrightness = $('#brightness');
-    const elBrightnessVal = $('#brightnessVal');
+    const elBrightnessVal = $('#brightnessVal'); 
+
 
     /* ---------- Board Mode (radios) ---------- */
-    const sourceRadios = [...document.querySelectorAll('input[name="source"]')];
-    const sourceValues = new Set(sourceRadios.map(r => r.value));
+    const sourceRadios   = Array.from(document.querySelectorAll('input[name="source"]'));
+    const sourceValues   = new Set(sourceRadios.map(r => r.value));
     const getSourceValue = () => sourceRadios.find(r => r.checked)?.value || null;
-    const setSourceValue = (v) => {
-      const current = getSourceValue() || 'national-rail';
-      const next = sourceValues.has(v) ? v : current; // never unset if saved value is unknown
-      sourceRadios.forEach(r => r.checked = (r.value === next));
-    };
-    function applySourceVisibility(){
-      const isNR = getSourceValue() === 'national-rail';
-      show(elNrOnly, isNR);
-      show(elWeatherWrap, isNR);
-      show(elTubeOnly, !isNR);
+
+    // Hide/show AND disable/enable the inputs inside each section
+    function toggleGroup(el, on){
+      if (!el) return;
+      el.hidden = !on;
+      el.querySelectorAll('input,select,textarea,button').forEach(c => { c.disabled = !on; });
     }
+
+    function applySourceVisibility(){
+      const mode = getSourceValue();
+      const isNR = mode === 'national-rail';
+      toggleGroup(elNrOnly,      isNR);
+      toggleGroup(elWeatherWrap, isNR);
+      toggleGroup(elTubeOnly,   !isNR);
+    }
+
+    function setSourceValue(v){
+      const fallback = 'national-rail';
+      const next = sourceValues.has(v) ? v : (getSourceValue() || fallback);
+      sourceRadios.forEach(r => { r.checked = (r.value === next); });
+      applySourceVisibility(); // IMPORTANT: reflect immediately
+    }
+
+    // Ensure a valid default before any async work runs
     if (!getSourceValue()) setSourceValue('national-rail');
-    sourceRadios.forEach(r => r.addEventListener('change', applySourceVisibility));
+    else applySourceVisibility();
+
+    // React to user changes (listen to both just in case)
+    sourceRadios.forEach(r => {
+      r.addEventListener('change', applySourceVisibility);
+      r.addEventListener('input',  applySourceVisibility);
+    });
+
+
+
 
     /* ---------- brightness ---------- */
     function reflectBrightnessLabel(){ if (elBrightnessVal && elBrightness) elBrightnessVal.textContent = String(elBrightness.value); }
@@ -499,7 +518,8 @@
 
       // Source: apply saved if valid; never unset existing selection
       const savedSource = s?.source ?? s?.src ?? s?.mode ?? null;
-      if (savedSource && sourceValues.has(savedSource)) setSourceValue(savedSource);
+      if (savedSource) setSourceValue(savedSource); else setSourceValue('national-rail');
+
       applySourceVisibility();
 
       // Brightness
