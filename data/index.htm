@@ -6,6 +6,20 @@
   <title>TRAKKR • Control Panel</title>
   <meta name="color-scheme" content="light dark" />
 
+  <script>
+  // Initial theme loader (before CSS and theme.js)
+  (function(){
+    try {
+      var KEY='trakkr-theme';
+      var m = localStorage.getItem(KEY);
+      if (m !== 'light' && m !== 'dark') {
+        m = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', m || 'dark');
+    } catch(e) {}
+  })();
+  </script>
+
   <style>
     :root{
       /* Dark is the default; light overrides live below */
@@ -380,7 +394,17 @@
 
     const btnTheme = $('#btnTheme');
     function getTheme(){ return (window.__trakkrTheme?.get?.() ?? document.documentElement.getAttribute('data-theme') ?? 'dark'); }
-    function setTheme(mode){ if (window.__trakkrTheme?.set) { window.__trakkrTheme.set(mode); } else { document.documentElement.setAttribute('data-theme', mode); } reflectThemeIcon(); }
+    function setTheme(mode){
+      if (window.__trakkrTheme?.set) {
+        window.__trakkrTheme.set(mode);
+      } else {
+        // Fallback path (in case theme.js hasn’t loaded yet)
+        const m = (mode === 'light') ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', m);
+        try { localStorage.setItem('trakkr-theme', m); } catch {}
+        reflectThemeIcon();
+      }
+    }
     function toggleTheme(){ setTheme(getTheme()==='dark'?'light':'dark'); }
     function reflectThemeIcon(){ const t=getTheme(); btnTheme.querySelector('.icon').textContent = (t==='light')?'🌙':'☀️'; btnTheme.title=`Switch to ${t==='light'?'dark':'light'} mode`; }
     btnTheme?.addEventListener('click', toggleTheme);
@@ -609,7 +633,7 @@
     });
 
     // Version info for side panel
-    
+
     (async () => {
       const el = document.getElementById('buildInfo');
       if (!el) return;
