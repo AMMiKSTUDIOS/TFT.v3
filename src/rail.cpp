@@ -17,9 +17,7 @@
 
 extern void ensureWiFi();
 extern void ensureTime();
-
-// [TRAKKR-NOTE] Explicit FreeRTOS includes not required on ESP32 Arduino;
-// Arduino.h pulls them in for us. We still use FreeRTOS APIs (tasks, semaphores).
+extern const char* cfgCallingAtCrs();  // returns "" when unset
 
 // === [TRAKKR][BEGIN:fetch_guard] ===
 static SemaphoreHandle_t gFetchSem = nullptr;
@@ -629,46 +627,91 @@ static bool nextTagNS(const String& xml, const String& tag, int& pos, String& in
 
 // ===== SOAP POST / FETCH / PARSE =====
 static bool postSoapOnce(String& outBody, int& outCode, const char* method, const char* reqTag){
-  ScopeTimer T("HTTP POST+recv"); logMem("pre-POST");
-  String soap;
-  soap.reserve(1600);
-  soap += "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-          "<soap:Envelope xmlns:soap=\""; soap+=SOAP12_NS; soap+="\""
-          " xmlns:typ=\""; soap+=TOK_NS; soap+="\""
-          " xmlns:ldb=\""; soap+=LDB_NS; soap+="\">"
-          "<soap:Header><typ:AccessToken><typ:TokenValue>";
-  soap += Cfg::darwinToken();
-  soap += "</typ:TokenValue></typ:AccessToken></soap:Header>"
-          "<soap:Body><ldb:"; soap+=reqTag; soap+=">"
-          "<ldb:numRows>"; soap+=String(ROWS); soap+="</ldb:numRows>"
-          "<ldb:crs>"; soap+=Cfg::crs(); soap+="</ldb:crs>"
-          "<ldb:timeOffset>0</ldb:timeOffset>"
-          "<ldb:timeWindow>"; soap+=String(TIME_WINDOW_MINS); soap+="</ldb:timeWindow>"
-          "</ldb:"; soap+=reqTag; soap+=">"
-          "</soap:Body></soap:Envelope>";
+  ScopeTimer T("HTTP POST+recv"); 
+  logMem("pre-POST");
 
+  String soap;
+  soap.reserve(1800);
+
+  // [TRAKKR] Envelope + namespaces
+  soap += "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
+  soap += "<soap:Envelope xmlns:soap=\""; soap += SOAP12_NS; soap += "\"";
+  soap += " xmlns:typ=\"";  soap += TOK_NS;  soap += "\"";
+  soap += " xmlns:ldb=\"";  soap += LDB_NS;  soap += "\">";
+
+  // [TRAKKR] Header with Darwin token
+  soap += "<soap:Header><typ:AccessToken><typ:TokenValue>";
+  soap += Cfg::darwinToken();
+  soap += "</typ:TokenValue></typ:AccessToken></soap:Header>";
+
+  // [TRAKKR] Body + request tag
+  soap += "<soap:Body><ldb:"; soap += reqTag; soap += ">";
+
+  // Core board params
+  soap += "<ldb:numRows>";   soap += String(ROWS);     soap += "</ldb:numRows>";
+  soap += "<ldb:crs>";       soap += Cfg::crs();       soap += "</ldb:crs>";
+
+  // [TRAKKR] Optional call-at filter from Control Panel
+  {
+    const char* filt = Cfg::callingAtCrs();          // e.g. "CLJ", or "" if unset
+    if (filt && *filt){
+      // Use 'from' for Arrivals boards, 'to' for Departures boards
+      const char* ftype = (strstr(reqTag, "Arr") != nullptr) ? "from" : "to";
+      soap += "<ldb:filterCrs>";   soap += filt;   soap += "</ldb:filterCrs>";
+      soap += "<ldb:filterType>";  soap += ftype;  soap += "</ldb:filterType>";
+    }
+  }
+
+  // Time window
+  soap += "<ldb:timeOffset>0</ldb:timeOffset>";
+  soap += "<ldb:timeWindow>"; soap += String(TIME_WINDOW_MINS); soap += "</ldb:timeWindow>";
+
+  // Close request + envelope
+  soap += "</ldb:"; soap += reqTag; soap += ">";
+  soap += "</soap:Body></soap:Envelope>";
+
+  // ===== HTTP POST =====
   WiFiClientSecure client; client.setInsecure(); client.setTimeout(12000);
   HTTPClient http; http.setReuse(false);
-  String url=String("https://")+DARWIN_HOST+DARWIN_PATH;
+  String url = String("https://") + DARWIN_HOST + DARWIN_PATH;
   http.setConnectTimeout(12000);
-  if(!http.begin(client,url)){ outCode=-1; Serial.println("[NET] http.begin() failed"); checkHeap("http.begin fail"); return false; }
+  if (!http.begin(client, url)){
+    outCode = -1;
+    Serial.println("[NET] http.begin() failed");
+    checkHeap("http.begin fail");
+    return false;
+  }
 
-  String action=String(LDB_NS)+method;
-  http.addHeader("Content-Type", String("application/soap+xml; charset=utf-8; action=\"")+action+"\"");
-  http.addHeader("Accept","text/xml"); http.addHeader("Connection","close");
+  String action = String(LDB_NS) + method;
+  http.addHeader("Content-Type", String("application/soap+xml; charset=utf-8; action=\"") + action + "\"");
+  http.addHeader("Accept", "text/xml");
+  http.addHeader("Connection", "close");
 
   if (DEBUG_NET){
     Serial.println("\n===== Darwin POST =====");
-    Serial.printf("Method: %s  Cfg::crs():%s  Rows:%d\n", method, Cfg::crs(), ROWS);
+    Serial.printf("Method: %s  CRS:%s  Rows:%d\n", method, Cfg::crs(), ROWS);
+    const char* dbgFilt = Cfg::callingAtCrs();
+    if (dbgFilt && *dbgFilt){
+      const char* ftype = (strstr(reqTag, "Arr") != nullptr) ? "from" : "to";
+      Serial.printf("Filter: %s (%s)\n", dbgFilt, ftype);
+    }
   }
 
-  outCode=http.POST((uint8_t*)soap.c_str(), soap.length());
-  outBody=http.getString(); http.end();
+  outCode = http.POST((uint8_t*)soap.c_str(), soap.length());
+  outBody = http.getString();
+  http.end();
 
-  if (DEBUG_NET){ Serial.printf("[NET] HTTP %d  body=%uB\n", outCode, (unsigned)outBody.length()); }
-  logMem("post-POST"); checkHeap("post-POST");
-  return outCode==200;
+  if (DEBUG_NET) Serial.printf("[NET] HTTP %d  body=%uB\n", outCode, (unsigned)outBody.length());
+  logMem("post-POST"); 
+  checkHeap("post-POST");
+  return outCode == 200;
 }
+
+
+
+
+
+
 static String extractFault(const String& body){
   String s=get1ns(body,"faultstring"); if(s.length()) return s;
   String reason=get1ns(body,"Reason"); String text=get1ns(reason,"Text");

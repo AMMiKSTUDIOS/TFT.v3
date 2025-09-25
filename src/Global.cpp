@@ -85,6 +85,64 @@ uint32_t    Cfg::tickerMs()    { return g.ticker_ms; }
 
 const char* Cfg::source()      { return g.source; }
 const char* Cfg::callingAt()   { return g.calling_at; }
+
+const char* Cfg::callingAtCrs(){
+  //
+  // [TRAKKR] Extract a 3-letter CRS from the stored calling-at value.
+  // Accepts "CLJ", "Clapham Junction / CLJ", "Clapham Junction (CLJ)".
+  //
+  static char out[4] = {0,0,0,0};
+  const char* s = g.calling_at;
+  out[0] = '\0';
+  if (!s || !*s) return out;
+
+  size_t L = std::strlen(s);
+
+  // Exact 3-letter CRS already
+  if (L == 3 && isAlpha3(s)) {
+    out[0] = (char)std::toupper((unsigned char)s[0]);
+    out[1] = (char)std::toupper((unsigned char)s[1]);
+    out[2] = (char)std::toupper((unsigned char)s[2]);
+    out[3] = '\0';
+    return out;
+  }
+
+  // Grab the last alphabetic run; if it's exactly 3 letters, treat as CRS
+  int i = (int)L - 1;
+  while (i >= 0 && !std::isalpha((unsigned char)s[i])) --i;
+  if (i >= 0) {
+    int end = i, start = i;
+    while (start >= 0 && std::isalpha((unsigned char)s[start])) --start;
+    ++start;
+    int runLen = end - start + 1;
+    if (runLen == 3) {
+      out[0] = (char)std::toupper((unsigned char)s[start+0]);
+      out[1] = (char)std::toupper((unsigned char)s[start+1]);
+      out[2] = (char)std::toupper((unsigned char)s[start+2]);
+      out[3] = '\0';
+      if (isAlpha3(out)) return out;
+    }
+  }
+
+  // Fallback: scan for "(XYZ)" anywhere
+  for (size_t k = 0; k + 4 < L; ++k) {
+    if (s[k] == '(' && s[k+4] == ')' &&
+        std::isalpha((unsigned char)s[k+1]) &&
+        std::isalpha((unsigned char)s[k+2]) &&
+        std::isalpha((unsigned char)s[k+3])) {
+      out[0] = (char)std::toupper((unsigned char)s[k+1]);
+      out[1] = (char)std::toupper((unsigned char)s[k+2]);
+      out[2] = (char)std::toupper((unsigned char)s[k+3]);
+      out[3] = '\0';
+      return out;
+    }
+  }
+
+  // No usable CRS found
+  return out;  // empty string
+}
+
+
 bool        Cfg::includeBus()  { return g.include_bus; }
 bool        Cfg::includePass() { return g.include_pass; }
 bool        Cfg::showDate()    { return g.show_date; }

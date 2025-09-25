@@ -89,6 +89,7 @@ namespace Cfg {
   const char*  ssEnd();
   const char*  tubeLine();
   const char*  tubeDir();
+  const char* callingAtCrs();
 
   // Setters (validate + persist)
   bool setWifi(const char* ssid, const char* pass);

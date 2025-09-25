@@ -214,19 +214,24 @@
         <fieldset>
 
           <legend>Station</legend>
-          
-          <!-- National Rail only -->
+              
 
+          <!-- National Rail only -->
+              
+              <datalist id="stations-list"></datalist>
+          
               <div id="nrOnly" class="row" aria-live="polite" hidden>
                 <div>
                   <input id="station" name="station_display" type="text"
                         placeholder="e.g., London Waterloo / WAT"
                         autocomplete="off" list="stations-list">
-                  <datalist id="stations-list"></datalist>
                   <input type="hidden" id="station_crs" name="station_crs">
                   <div class="hint">&nbsp;</div>
-                  <label for="callingAt">Only show trains calling at</label>
-                  <input id="callingAt" name="callingAt" type="text" placeholder="e.g., Clapham Junction / CLJ" />
+                    <label for="callingAt">Only show trains calling at</label>
+                    <input id="callingAt" name="callingAt_display" type="text"
+                          placeholder="e.g., Clapham Junction / CLJ"
+                          autocomplete="off" list="stations-list">
+                    <input type="hidden" id="callingAt_crs" name="callingAt_crs">
                   <div class="hint">&nbsp;</div>
                   <div class="row">
                     <label class="switch">
@@ -293,7 +298,7 @@
             </div>
           </div>
 
-          
+
         </fieldset>
 
         <!-- Extras -->
